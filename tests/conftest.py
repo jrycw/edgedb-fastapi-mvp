@@ -22,6 +22,11 @@ def events_url():
 
 
 @pytest.fixture
+def health_url():
+    yield "healthy"
+
+
+@pytest.fixture
 def gen_user():
     return lambda: TestUserData()
 

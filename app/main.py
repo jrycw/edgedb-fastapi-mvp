@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app import events, users
+from app import events, health, users
 
 from ._lifespan import lifespan
 
@@ -22,10 +22,7 @@ def make_app(lifespan):
 
     app.include_router(users.router)
     app.include_router(events.router)
-
-    @app.get("/health_check", include_in_schema=False)
-    async def health_check() -> dict[str, str]:
-        return {"status": "Ok"}
+    app.include_router(health.router)
 
     return app
 
