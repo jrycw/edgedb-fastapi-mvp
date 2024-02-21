@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from http import HTTPStatus
 
-import fastapi
 from fastapi.responses import JSONResponse
 
 
@@ -14,9 +13,8 @@ def test_healthy(mocker, health_url):
     expected_response = {
         "content": {"ok": ["edgedb.asyncio_client.AsyncIOClient"], "failing": []},
     }
-    mocked_get = mocker.patch.object(
-        fastapi.testclient.TestClient,
-        "get",
+    mocked_get = mocker.patch(
+        "fastapi.testclient.TestClient.get",
         return_value=JSONResponse(content=expected_response, status_code=HTTPStatus.OK),
     )
 
@@ -42,9 +40,8 @@ def test_not_healthy(mocker, health_url):
             ],
         },
     }
-    mocked_get = mocker.patch.object(
-        fastapi.testclient.TestClient,
-        "get",
+    mocked_get = mocker.patch(
+        "fastapi.testclient.TestClient.get",
         return_value=JSONResponse(
             content=expected_response, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
         ),
