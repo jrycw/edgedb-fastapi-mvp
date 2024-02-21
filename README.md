@@ -8,3 +8,4 @@ This repository is the outcome of my self-practice journey with `EdgeDB` and `Fa
 * Explored integration possibilities with [svcs](https://svcs.hynek.me/en/stable/index.html) written by [Hynek Schlawack](https://hynek.me/).
 * Employed additional `Pydantic` models for enhanced data validation and serialization.
 * Expanded the test suite to ensure comprehensive coverage.
+* Testing out the new package installer and resolver, [uv](https://github.com/astral-sh/uv).
