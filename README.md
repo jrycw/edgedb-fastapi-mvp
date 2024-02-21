@@ -1,4 +1,5 @@
 # edgedb-fastapi-mvp
+[![tests](https://github.com/jrycw/edgedb-fastapi-mvp/actions/workflows/pytest.yml/badge.svg?branch=master)](https://github.com/jrycw/edgedb-fastapi-mvp/actions/workflows/pytest.yml)
 
 ## Project Overview
 This repository is the outcome of my self-practice journey with `EdgeDB` and `FastAPI`. Initially, I followed the tutorial provided in [EdgeDB for FastAPI](https://www.edgedb.com/docs/guides/tutorials/rest_apis_with_fastapi), but I've made the following modifications:
