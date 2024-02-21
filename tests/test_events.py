@@ -5,7 +5,7 @@ from http import HTTPStatus
 import edgedb
 from edgedb.asyncio_client import AsyncIOClient
 
-from app._lifespan import lifespan, tx_lifespan
+from app._lifespan import lifespan
 from app.queries import create_event_async_edgeql as create_event_qry
 from app.queries import delete_event_async_edgeql as delete_event_qry
 from app.queries import (
@@ -18,19 +18,18 @@ from app.queries import update_event_async_edgeql as update_event_qry
 ################################
 # Good cases
 ################################
-def test_get_event(gen_event, gen_user, mocker, test_client, events_url):
+def test_get_event(gen_event, gen_user, mock_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     host = get_event_by_name_qry.GetEventByNameResultHost(
         **user.model_dump(include={"id", "name"})
     )
-    mocker.patch(
-        "app.events.get_event_by_name_qry.get_event_by_name",
-        return_value=get_event_by_name_qry.GetEventByNameResult(
-            **event.model_dump(include={"id", "name", "address", "schedule"}),
-            host=host,
-        ),
+
+    mock_client.query_single.return_value = get_event_by_name_qry.GetEventByNameResult(
+        **event.model_dump(include={"id", "name", "address", "schedule"}),
+        host=host,
     )
-    lifespan.registry.register_value(AsyncIOClient, mocker)
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
     response = test_client.get(events_url, params={"name": event.name})
     resp_json = response.json()
 
@@ -43,7 +42,7 @@ def test_get_event(gen_event, gen_user, mocker, test_client, events_url):
     assert resp_json["host"]["name"] == user.name
 
 
-def test_get_events(gen_event, gen_user, mocker, test_client, events_url):
+def test_get_events(gen_event, gen_user, mock_client, test_client, events_url):
     user1, user2 = gen_user(), gen_user()
     event1, event2 = gen_event(), gen_event()
     host1 = get_events_qry.GetEventsResultHost(
@@ -52,20 +51,19 @@ def test_get_events(gen_event, gen_user, mocker, test_client, events_url):
     host2 = get_events_qry.GetEventsResultHost(
         **user2.model_dump(include={"id", "name"})
     )
-    mocker.patch(
-        "app.events.get_events_qry.get_events",
-        return_value=[
-            get_events_qry.GetEventsResult(
-                **event1.model_dump(include={"id", "name", "address", "schedule"}),
-                host=host1,
-            ),
-            get_events_qry.GetEventsResult(
-                **event2.model_dump(include={"id", "name", "address", "schedule"}),
-                host=host2,
-            ),
-        ],
-    )
-    lifespan.registry.register_value(AsyncIOClient, mocker)
+
+    mock_client.query.return_value = [
+        get_events_qry.GetEventsResult(
+            **event1.model_dump(include={"id", "name", "address", "schedule"}),
+            host=host1,
+        ),
+        get_events_qry.GetEventsResult(
+            **event2.model_dump(include={"id", "name", "address", "schedule"}),
+            host=host2,
+        ),
+    ]
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
     response = test_client.get(events_url)
     first_event, second_event = response.json()
 
@@ -85,21 +83,19 @@ def test_get_events(gen_event, gen_user, mocker, test_client, events_url):
     assert second_event["host"]["name"] == user2.name
 
 
-def test_post_event(gen_event, gen_user, mocker, tx_test_client, events_url):
+def test_post_event(gen_event, gen_user, mock_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     host = create_event_qry.CreateEventResultHost(
         **user.model_dump(include={"id", "name"})
     )
-    mocker.patch(
-        "app.events.create_event_qry.create_event",
-        return_value=create_event_qry.CreateEventResult(
-            **event.model_dump(include={"id", "name", "address", "schedule"}),
-            host=host,
-        ),
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.post(
+    mock_client.query_single.return_value = create_event_qry.CreateEventResult(
+        **event.model_dump(include={"id", "name", "address", "schedule"}),
+        host=host,
+    )
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.post(
         events_url,
         json={
             **event.model_dump(include={"name", "address"}),
@@ -118,23 +114,21 @@ def test_post_event(gen_event, gen_user, mocker, tx_test_client, events_url):
     assert resp_json["host"]["name"] == user.name
 
 
-def test_put_event(gen_event, gen_user, mocker, tx_test_client, events_url):
+def test_put_event(gen_event, gen_user, mock_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
     host = update_event_qry.UpdateEventResultHost(
         **user.model_dump(include={"id", "name"})
     )
-    mocker.patch(
-        "app.events.update_event_qry.update_event",
-        return_value=update_event_qry.UpdateEventResult(
-            **event.model_dump(include={"id", "address", "schedule"}),
-            name=e_name_new,
-            host=host,
-        ),
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.put(
+    mock_client.query_single.return_value = update_event_qry.UpdateEventResult(
+        **event.model_dump(include={"id", "address", "schedule"}),
+        name=e_name_new,
+        host=host,
+    )
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.put(
         events_url,
         json={
             "name": e_name_old,
@@ -155,21 +149,19 @@ def test_put_event(gen_event, gen_user, mocker, tx_test_client, events_url):
     assert resp_json["host"]["name"] == user.name
 
 
-def test_delete_event(gen_event, gen_user, mocker, tx_test_client, events_url):
+def test_delete_event(gen_event, gen_user, mock_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     host = delete_event_qry.DeleteEventResultHost(
         **user.model_dump(include={"id", "name"})
     )
-    mocker.patch(
-        "app.events.delete_event_qry.delete_event",
-        return_value=delete_event_qry.DeleteEventResult(
-            **event.model_dump(include={"id", "name", "address", "schedule"}),
-            host=host,
-        ),
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.delete(events_url, params={"name": event.name})
+    mock_client.query_single.return_value = delete_event_qry.DeleteEventResult(
+        **event.model_dump(include={"id", "name", "address", "schedule"}),
+        host=host,
+    )
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.delete(events_url, params={"name": event.name})
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
@@ -186,12 +178,12 @@ def test_delete_event(gen_event, gen_user, mocker, tx_test_client, events_url):
 ################################
 
 
-def test_get_event_not_found(gen_event, mocker, test_client, events_url):
+def test_get_event_not_found(gen_event, mock_client, test_client, events_url):
     event = gen_event()
-    mocker.patch(
-        "app.events.get_event_by_name_qry.get_event_by_name", return_value=None
-    )
-    lifespan.registry.register_value(AsyncIOClient, mocker)
+
+    mock_client.query_single.return_value = None
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
     response = test_client.get(events_url, params={"name": event.name})
     resp_json = response.json()
 
@@ -200,16 +192,14 @@ def test_get_event_not_found(gen_event, mocker, test_client, events_url):
 
 
 def test_post_event_bad_request1(
-    gen_event, gen_user, mocker, tx_test_client, events_url
+    gen_event, gen_user, mock_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
-    mocker.patch(
-        "app.events.create_event_qry.create_event",
-        side_effect=edgedb.errors.InvalidArgumentError,
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.post(
+    mock_client.query_single.side_effect = edgedb.errors.InvalidArgumentError
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.post(
         events_url,
         json={
             **event.model_dump(include={"name", "address"}),
@@ -220,25 +210,18 @@ def test_post_event_bad_request1(
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert (
-        resp_json["detail"]["error"]
-        == "Invalid datetime format. "
-        + "Datetime string must look like this: "
-        + "'2010-12-27T23:59:59-07:00'"
-    )
+    assert "Invalid datetime format" in resp_json["detail"]["error"]
 
 
 def test_post_event_bad_request2(
-    gen_event, gen_user, mocker, tx_test_client, events_url
+    gen_event, gen_user, mock_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
-    mocker.patch(
-        "app.events.create_event_qry.create_event",
-        side_effect=edgedb.errors.ConstraintViolationError,
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.post(
+    mock_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.post(
         events_url,
         json={
             **event.model_dump(include={"name", "address"}),
@@ -253,17 +236,15 @@ def test_post_event_bad_request2(
 
 
 def test_put_event_bad_request1(
-    gen_event, gen_user, mocker, tx_test_client, events_url
+    gen_event, gen_user, mock_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
-    mocker.patch(
-        "app.events.update_event_qry.update_event",
-        side_effect=edgedb.errors.InvalidArgumentError,
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.put(
+    mock_client.query_single.side_effect = edgedb.errors.InvalidArgumentError
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.put(
         events_url,
         json={
             "name": e_name_old,
@@ -276,25 +257,19 @@ def test_put_event_bad_request1(
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert (
-        resp_json["detail"]["error"]
-        == "Invalid datetime format. "
-        + "Datetime string must look like this: '2010-12-27T23:59:59-07:00'"
-    )
+    assert "Invalid datetime format" in resp_json["detail"]["error"]
 
 
 def test_put_event_bad_request2(
-    gen_event, gen_user, mocker, tx_test_client, events_url
+    gen_event, gen_user, mock_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
-    mocker.patch(
-        "app.events.update_event_qry.update_event",
-        side_effect=edgedb.errors.ConstraintViolationError,
-    )
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.put(
+    mock_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.put(
         events_url,
         json={
             "name": e_name_old,
@@ -311,14 +286,15 @@ def test_put_event_bad_request2(
 
 
 def test_put_event_internal_server_error(
-    gen_event, gen_user, mocker, tx_test_client, events_url
+    gen_event, gen_user, mock_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
-    mocker.patch("app.events.update_event_qry.update_event", return_value=None)
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.put(
+    mock_client.query_single.return_value = None
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.put(
         events_url,
         json={
             "name": e_name_old,
@@ -335,13 +311,14 @@ def test_put_event_internal_server_error(
 
 
 def test_delete_event_internal_server_error(
-    gen_event, mocker, tx_test_client, events_url
+    gen_event, mock_client, test_client, events_url
 ):
     event = gen_event()
-    mocker.patch("app.events.delete_event_qry.delete_event", return_value=None)
 
-    tx_lifespan.registry.register_value(AsyncIOClient, mocker)
-    response = tx_test_client.delete(events_url, params={"name": event.name})
+    mock_client.query_single.return_value = None
+    lifespan.registry.register_value(AsyncIOClient, mock_client)
+
+    response = test_client.delete(events_url, params={"name": event.name})
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR

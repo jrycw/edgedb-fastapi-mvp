@@ -5,5 +5,4 @@ httpx[cli]
 uvicorn
 pytest
 pytest-asyncio
-pytest-mock
 pytest-faker

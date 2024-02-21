@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from unittest.mock import Mock
+
 import pytest
+from edgedb.asyncio_client import AsyncIOClient
 from fastapi.testclient import TestClient
 
-from app._lifespan import tx_lifespan
-from app.main import app, make_app
+from app.main import app
 
 from .factories import TestEventData, TestUserData
 
@@ -36,11 +38,16 @@ def test_client():
 
 
 @pytest.fixture
-def tx_app():
-    yield make_app(tx_lifespan)
+def mock_client():
+    yield Mock(spec_set=AsyncIOClient)
 
 
-@pytest.fixture
-def tx_test_client(tx_app):
-    with TestClient(tx_app) as client:
-        yield client
+# @pytest.fixture
+# def tx_app():
+#     yield make_app(tx_lifespan)
+
+
+# @pytest.fixture
+# def tx_test_client(tx_app):
+#     with TestClient(tx_app) as client:
+#         yield client
