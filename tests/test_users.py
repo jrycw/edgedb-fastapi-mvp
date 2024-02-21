@@ -20,9 +20,7 @@ def test_get_user(gen_user, mocker, test_client, users_url):
     user = gen_user()
     mocker.patch(
         "app.users.get_user_by_name_qry.get_user_by_name",
-        return_value=get_user_by_name_qry.GetUserByNameResult(
-            **user.model_dump(include={"id", "name", "created_at"})
-        ),
+        return_value=get_user_by_name_qry.GetUserByNameResult(**user.model_dump()),
     )
     lifespan.registry.register_value(AsyncIOClient, mocker)
     response = test_client.get(users_url, params={"name": user.name})
@@ -65,9 +63,7 @@ def test_post_user(gen_user, mocker, tx_test_client, users_url):
     user = gen_user()
     mocker.patch(
         "app.users.create_user_qry.create_user",
-        return_value=create_user_qry.CreateUserResult(
-            **user.model_dump(include={"id", "name", "created_at"})
-        ),
+        return_value=create_user_qry.CreateUserResult(**user.model_dump()),
     )
 
     tx_lifespan.registry.register_value(AsyncIOClient, mocker)
@@ -82,7 +78,7 @@ def test_post_user(gen_user, mocker, tx_test_client, users_url):
 
 def test_put_user(gen_user, mocker, tx_test_client, users_url):
     user = gen_user()
-    u_name_old, u_name_new = user.name, user.extra_name
+    u_name_old, u_name_new = user.name, f"{user.name}_new"
     mocker.patch(
         "app.users.update_user_qry.update_user",
         return_value=update_users_qry.UpdateUserResult(
@@ -107,9 +103,7 @@ def test_delete_user(gen_user, mocker, tx_test_client, users_url):
     user = gen_user()
     mocker.patch(
         "app.users.delete_user_qry.delete_user",
-        return_value=delete_user_qry.DeleteUserResult(
-            **user.model_dump(include={"id", "name", "created_at"})
-        ),
+        return_value=delete_user_qry.DeleteUserResult(**user.model_dump()),
     )
 
     tx_lifespan.registry.register_value(AsyncIOClient, mocker)
@@ -153,7 +147,7 @@ def test_post_user_bad_request(gen_user, mocker, tx_test_client, users_url):
 
 def test_put_user_not_found(gen_user, mocker, tx_test_client, users_url):
     user = gen_user()
-    u_name_old, u_name_new = user.name, user.extra_name
+    u_name_old, u_name_new = user.name, f"{user.name}_new"
     mocker.patch("app.users.update_user_qry.update_user", return_value=None)
 
     tx_lifespan.registry.register_value(AsyncIOClient, mocker)
@@ -169,7 +163,7 @@ def test_put_user_not_found(gen_user, mocker, tx_test_client, users_url):
 
 def test_put_user_bad_request(gen_user, mocker, tx_test_client, users_url):
     user = gen_user()
-    u_name_old, u_name_new = user.name, user.extra_name
+    u_name_old, u_name_new = user.name, f"{user.name}_new"
     mocker.patch(
         "app.users.update_user_qry.update_user",
         side_effect=edgedb.errors.ConstraintViolationError,

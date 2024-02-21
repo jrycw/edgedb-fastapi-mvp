@@ -1,16 +1,12 @@
 from __future__ import annotations
 
-import datetime
-import random
-import uuid
-
 import pytest
-from faker import Faker
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, Field
 
 from app._lifespan import tx_lifespan
 from app.main import app, make_app
+
+from .factories import TestEventData, TestUserData
 
 
 @pytest.fixture
@@ -24,38 +20,12 @@ def events_url():
 
 
 @pytest.fixture
-def faker():
-    yield Faker()
-
-
-@pytest.fixture
-def gen_user(faker):
-    class TestUserData(BaseModel):
-        id: uuid.uuid4 = Field(default_factory=faker.uuid4)
-        name: str = Field(default_factory=faker.name)
-        extra_name: str = Field(default_factory=faker.name)
-        created_at: datetime.datetime = Field(
-            default_factory=lambda: faker.date_time().replace(
-                microsecond=random.randint(0, 1000000)
-            )
-        )
-
+def gen_user():
     return lambda: TestUserData()
 
 
 @pytest.fixture
-def gen_event(faker):
-    class TestEventData(BaseModel):
-        id: uuid.uuid4 = Field(default_factory=faker.uuid4)
-        name: str = Field(default_factory=lambda: faker.text(max_nb_chars=10))
-        extra_name: str = Field(default_factory=lambda: faker.text(max_nb_chars=10))
-        address: str = Field(default_factory=faker.street_address)
-        schedule: datetime.datetime = Field(
-            default_factory=lambda: faker.date_time().replace(
-                microsecond=random.randint(0, 1000000)
-            )
-        )
-
+def gen_event():
     return lambda: TestEventData()
 
 

@@ -120,7 +120,7 @@ def test_post_event(gen_event, gen_user, mocker, tx_test_client, events_url):
 
 def test_put_event(gen_event, gen_user, mocker, tx_test_client, events_url):
     user, event = gen_user(), gen_event()
-    e_name_old, e_name_new = event.name, event.extra_name
+    e_name_old, e_name_new = event.name, f"{event.name}_new"
     host = update_event_qry.UpdateEventResultHost(
         **user.model_dump(include={"id", "name"})
     )
@@ -256,7 +256,7 @@ def test_put_event_bad_request1(
     gen_event, gen_user, mocker, tx_test_client, events_url
 ):
     user, event = gen_user(), gen_event()
-    e_name_old, e_name_new = event.name, event.extra_name
+    e_name_old, e_name_new = event.name, f"{event.name}_new"
     mocker.patch(
         "app.events.update_event_qry.update_event",
         side_effect=edgedb.errors.InvalidArgumentError,
@@ -287,7 +287,7 @@ def test_put_event_bad_request2(
     gen_event, gen_user, mocker, tx_test_client, events_url
 ):
     user, event = gen_user(), gen_event()
-    e_name_old, e_name_new = event.name, event.extra_name
+    e_name_old, e_name_new = event.name, f"{event.name}_new"
     mocker.patch(
         "app.events.update_event_qry.update_event",
         side_effect=edgedb.errors.ConstraintViolationError,
@@ -314,7 +314,7 @@ def test_put_event_internal_server_error(
     gen_event, gen_user, mocker, tx_test_client, events_url
 ):
     user, event = gen_user(), gen_event()
-    e_name_old, e_name_new = event.name, event.extra_name
+    e_name_old, e_name_new = event.name, f"{event.name}_new"
     mocker.patch("app.events.update_event_qry.update_event", return_value=None)
 
     tx_lifespan.registry.register_value(AsyncIOClient, mocker)
