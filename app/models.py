@@ -1,6 +1,6 @@
 import datetime
 
-from pydantic import UUID4, BaseModel
+from pydantic import UUID4, BaseModel, Field
 
 
 ################################
@@ -58,3 +58,10 @@ class EventUpdate(EventCreate):
 
 class EventFull(Auitable, EventID, EventCreate):
     pass
+
+
+################################
+# Health
+################################
+class HealthOut(BaseModel):
+    ok: list[str] = Field(default_factory=list)

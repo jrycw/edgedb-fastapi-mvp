@@ -1,60 +1,38 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: F401
 
-import json
 from http import HTTPStatus
-
-import fastapi
-from fastapi.responses import JSONResponse
 
 
 ################################
 # Good case
 ################################
-def test_healthy(mocker, health_url):
-    expected_response = {
-        "content": {"ok": ["edgedb.asyncio_client.AsyncIOClient"], "failing": []},
-    }
-    mocked_get = mocker.patch.object(
-        fastapi.testclient.TestClient,
-        "get",
-        return_value=JSONResponse(content=expected_response, status_code=HTTPStatus.OK),
+def test_healthy(mocker, test_client, health_url):
+    mocker.patch(
+        "app.health._check_healthy",
+        return_value=(["edgedb.asyncio_client.AsyncIOClient"], []),
     )
 
-    response = mocked_get(health_url)
-    resp_json = json.loads(response.body)
+    response = test_client.get(health_url)
+    resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["content"]["ok"] == ["edgedb.asyncio_client.AsyncIOClient"]
-    assert resp_json["content"]["failing"] == []
+    assert resp_json["ok"] == ["edgedb.asyncio_client.AsyncIOClient"]
 
 
 ################################
 # Bad case
 ################################
-def test_not_healthy(mocker, health_url):
-    expected_response = {
-        "content": {
-            "ok": [],
-            "failing": [
-                {
-                    "edgedb.asyncio_client.AsyncIOClient": "Exceptions will be listed here"
-                }
-            ],
-        },
-    }
-    mocked_get = mocker.patch.object(
-        fastapi.testclient.TestClient,
-        "get",
-        return_value=JSONResponse(
-            content=expected_response, status_code=HTTPStatus.INTERNAL_SERVER_ERROR
+def test_not_healthy(mocker, test_client, health_url):
+    mocker.patch(
+        "app.health._check_healthy",
+        return_value=(
+            [],
+            [{"edgedb.asyncio_client.AsyncIOClient": "Exceptions will be listed here"}],
         ),
     )
 
-    response = mocked_get(health_url)
-    resp_json = json.loads(response.body)
+    response = test_client.get(health_url)
+    resp_json = response.json()
 
     assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-    assert resp_json["content"]["ok"] == []
-    assert resp_json["content"]["failing"] == [
-        {"edgedb.asyncio_client.AsyncIOClient": "Exceptions will be listed here"}
-    ]
+    assert "edgedb.asyncio_client.AsyncIOClient" in resp_json["detail"]["error"]
