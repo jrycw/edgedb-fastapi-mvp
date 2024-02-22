@@ -34,8 +34,7 @@ async def _check_healthy(
 )
 async def healthy(services: svcs.fastapi.DepContainer):
     """
-    Ping all external services.
-    ref: https://svcs.hynek.me/en/stable/integrations/fastapi.html
+    [Ping all external services.](https://svcs.hynek.me/en/stable/integrations/fastapi.html)
     """
     ok, failing = await _check_healthy(services)
 
