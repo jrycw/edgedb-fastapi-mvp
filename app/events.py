@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import datetime  # noqa: F401
 from http import HTTPStatus
 from typing import Annotated
 

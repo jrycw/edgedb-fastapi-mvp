@@ -1,4 +1,4 @@
-from __future__ import annotations  # noqa: F401
+from __future__ import annotations
 
 from http import HTTPStatus
 
