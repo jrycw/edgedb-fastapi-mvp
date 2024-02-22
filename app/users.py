@@ -27,6 +27,7 @@ router = APIRouter()
     "/users",
     response_model=list[get_users_qry.GetUsersResult]
     | get_user_by_name_qry.GetUserByNameResult,
+    tags=["users"],
 )
 async def get_users(
     services: svcs.fastapi.DepContainer,
@@ -54,6 +55,7 @@ async def get_users(
     "/users",
     status_code=HTTPStatus.CREATED,
     response_model=create_user_qry.CreateUserResult,
+    tags=["users"],
 )
 async def post_user(services: svcs.fastapi.DepContainer, user: UserCreate):
     client = await services.aget(AsyncIOClient)
@@ -73,7 +75,11 @@ async def post_user(services: svcs.fastapi.DepContainer, user: UserCreate):
 ################################
 
 
-@router.put("/users", response_model=update_user_qry.UpdateUserResult)
+@router.put(
+    "/users",
+    response_model=update_user_qry.UpdateUserResult,
+    tags=["users"],
+)
 async def put_user(
     services: svcs.fastapi.DepContainer,
     user: UserUpdate,
@@ -101,7 +107,11 @@ async def put_user(
 ################################
 
 
-@router.delete("/users", response_model=delete_user_qry.DeleteUserResult)
+@router.delete(
+    "/users",
+    response_model=delete_user_qry.DeleteUserResult,
+    tags=["users"],
+)
 async def delete_user(
     services: svcs.fastapi.DepContainer, name: Annotated[str, Query(max_length=50)]
 ):

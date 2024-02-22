@@ -28,6 +28,7 @@ router = APIRouter()
     "/events",
     response_model=list[get_events_qry.GetEventsResult]
     | get_event_by_name_qry.GetEventByNameResult,
+    tags=["events"],
 )
 async def get_events(
     services: svcs.fastapi.DepContainer,
@@ -55,6 +56,7 @@ async def get_events(
     "/events",
     status_code=HTTPStatus.CREATED,
     response_model=create_event_qry.CreateEventResult,
+    tags=["events"],
 )
 async def post_event(
     services: svcs.fastapi.DepContainer,
@@ -88,7 +90,11 @@ async def post_event(
 # ################################
 
 
-@router.put("/events", response_model=update_event_qry.UpdateEventResult)
+@router.put(
+    "/events",
+    response_model=update_event_qry.UpdateEventResult,
+    tags=["events"],
+)
 async def put_event(
     services: svcs.fastapi.DepContainer,
     event: EventUpdate,
@@ -125,7 +131,11 @@ async def put_event(
 # ################################
 
 
-@router.delete("/events", response_model=delete_event_qry.DeleteEventResult)
+@router.delete(
+    "/events",
+    response_model=delete_event_qry.DeleteEventResult,
+    tags=["events"],
+)
 async def delete_event(
     services: svcs.fastapi.DepContainer,
     name: Annotated[str, Query(max_length=50)],
