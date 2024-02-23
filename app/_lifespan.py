@@ -11,20 +11,16 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, need_fastui: bool):
     # EdgeDB client
     db_client = edgedb.create_async_client()
 
-    async def setup_edgedb():
+    async def setup_db_client():
         yield db_client
 
-    async def shutdown_edgedb():
-        await db_client.aclose()
-
-    async def ping_callable(_db_client):
+    async def ping_db_callable(_db_client):
         return await _db_client.query("select 1;")
 
     registry.register_factory(
         AsyncIOClient,
-        setup_edgedb,
-        on_registry_close=shutdown_edgedb,
-        ping=ping_callable,
+        setup_db_client,
+        ping=ping_db_callable,
     )
 
     if need_fastui:
@@ -33,19 +29,21 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, need_fastui: bool):
         base_url = f"{host}:{settings.port}"
         client = AsyncClient(base_url=base_url)
 
-        async def setup_httpx():
+        async def setup_httpx_client():
             yield client
 
-        async def shutdown_httpx():
-            await client.aclose()
+        async def ping_web_callable(_client):
+            return await _client.get("/covered-by-fastui.users.html_landing")
 
         registry.register_factory(
             AsyncClient,
-            setup_httpx,
-            on_registry_close=shutdown_httpx,
+            setup_httpx_client,
+            ping=ping_web_callable,
         )
 
     yield
+
+    await registry.aclose()
 
 
 ################################
