@@ -12,7 +12,7 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, need_fastui: bool):
     db_client = edgedb.create_async_client()
 
     async def setup_edgedb():
-        return await db_client.ensure_connected()
+        yield db_client
 
     async def shutdown_edgedb():
         await db_client.aclose()
