@@ -7,5 +7,6 @@ pytest
 pytest-asyncio
 pytest-mock
 pytest-faker
-fastui
 pydantic-settings
+fastui
+python-multipart
