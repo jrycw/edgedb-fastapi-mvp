@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 ################################
 # Abstract
 ################################
-class Auitable(BaseModel):
+class Auditable(BaseModel):
     created_at: datetime.datetime
 
 
@@ -30,7 +30,7 @@ class UserUpdate(UserCreate):
     new_name: str
 
 
-class UserFull(Auitable, UserID, UserBase):
+class UserFull(Auditable, UserID, UserBase):
     pass
 
 
@@ -57,7 +57,7 @@ class EventUpdate(EventCreate):
     new_name: str
 
 
-class EventFull(Auitable, EventID, EventCreate):
+class EventFull(Auditable, EventID, EventCreate):
     pass
 
 
