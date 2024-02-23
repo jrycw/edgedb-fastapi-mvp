@@ -1,6 +1,7 @@
 import datetime
+import uuid
 
-from pydantic import UUID4, BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 ################################
@@ -14,7 +15,7 @@ class Auitable(BaseModel):
 # User
 ################################
 class UserID(BaseModel):
-    id: UUID4
+    id: uuid.UUID
 
 
 class UserBase(BaseModel):
@@ -39,7 +40,7 @@ class UserFull(Auitable, UserID, UserBase):
 
 
 class EventID(BaseModel):
-    id: UUID4
+    id: uuid.UUID
 
 
 class EventBase(BaseModel):
