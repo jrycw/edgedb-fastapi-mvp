@@ -4,9 +4,8 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from app import events, health, users
-
-from .config import settings
-from .lifespan import lifespan
+from app.config import settings
+from app.lifespan import lifespan
 
 
 def make_app(lifespan):

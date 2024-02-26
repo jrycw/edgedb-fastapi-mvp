@@ -59,14 +59,9 @@ async def post_user(
         resp_json = resp.json()
         return [
             c.FireEvent(
-                event=GoToEvent(url="/users/new/"),
-                message=f'USER Exists: {resp_json["detail"]["error"]}',
-            ),
-            c.ModelForm(
-                model=UserCreationForm,
-                display_mode="page",
-                submit_url="/api/users/new/",
-            ),
+                event=GoToEvent(url="/users/"),
+                message=f'User not added: {resp_json["detail"]["error"]}',
+            )
         ]
     return [c.FireEvent(event=GoToEvent(url=f"/users/{form.name}/"))]
 
@@ -82,9 +77,8 @@ async def user_profile(
     """
     client = await services.aget(AsyncClient)
     resp = await client.get("/users", params={"name": name})
-    resp_json = _raise_for_status(resp, HTTPStatus.OK)
+    resp_json = _raise_for_status(resp)  # try using prebuilt_html
     user = UserFull(**resp_json)
-
     page_comp_list = [
         c.Heading(text=user.name, level=2),
         c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
@@ -93,11 +87,11 @@ async def user_profile(
             components=[
                 c.Button(
                     text="Update User",
-                    on_click=PageEvent(name="modal-update-prompt"),
+                    on_click=PageEvent(name="update-user"),
                     class_name="+ ms-2",
                 ),
                 c.Modal(
-                    title="Form Prompt",
+                    title="Update User",
                     body=[
                         c.Paragraph(text=f"Confirm to update User(username={name})"),
                         c.ModelForm(
@@ -105,21 +99,18 @@ async def user_profile(
                             submit_url=f"/api/users/{name}/update/",
                             loading=[c.Spinner(text="Updating...")],
                             footer=[],
-                            submit_trigger=PageEvent(name="modal-form-update-submit"),
+                            submit_trigger=PageEvent(
+                                name="modal-form-update-user-submit"
+                            ),
                         ),
                     ],
                     footer=[
                         c.Button(
-                            text="Cancel",
-                            named_style="secondary",
-                            on_click=PageEvent(name="modal-update-prompt", clear=True),
-                        ),
-                        c.Button(
                             text="Submit",
-                            on_click=PageEvent(name="modal-form-update-submit"),
+                            on_click=PageEvent(name="modal-form-update-user-submit"),
                         ),
                     ],
-                    open_trigger=PageEvent(name="modal-update-prompt"),
+                    open_trigger=PageEvent(name="update-user"),
                 ),
             ],
             class_name="mb-3",
@@ -133,11 +124,11 @@ async def user_profile(
                 components=[
                     c.Button(
                         text="Delete User",
-                        on_click=PageEvent(name="modal-delete-prompt"),
+                        on_click=PageEvent(name="delete-user"),
                         class_name="+ ms-2",
                     ),
                     c.Modal(
-                        title="Form Prompt",
+                        title="Delete User",
                         body=[
                             c.Paragraph(
                                 text=f"Confirm to delete User(username={name})"
@@ -148,24 +139,17 @@ async def user_profile(
                                 loading=[c.Spinner(text="Deleting...")],
                                 footer=[],
                                 submit_trigger=PageEvent(
-                                    name="modal-form-delete-submit"
+                                    name="form-delete-user-submit"
                                 ),
                             ),
                         ],
                         footer=[
                             c.Button(
-                                text="Cancel",
-                                named_style="secondary",
-                                on_click=PageEvent(
-                                    name="modal-delete-prompt", clear=True
-                                ),
-                            ),
-                            c.Button(
                                 text="Submit",
-                                on_click=PageEvent(name="modal-form-delete-submit"),
+                                on_click=PageEvent(name="form-delete-user-submit"),
                             ),
                         ],
-                        open_trigger=PageEvent(name="modal-delete-prompt"),
+                        open_trigger=PageEvent(name="delete-user"),
                     ),
                 ],
             ),
@@ -184,7 +168,14 @@ async def update_user(
     client = await services.aget(AsyncClient)
     form_dict = {"name": name} | form.model_dump()
     resp = await client.put("/users", json=form_dict)
-    resp_json = _raise_for_status(resp, HTTPStatus.OK)
+    if resp.status_code != HTTPStatus.OK:
+        resp_json = resp.json()
+        return [
+            c.FireEvent(
+                event=GoToEvent(url=f"/users/{form_dict['name']}/"),
+                message=f'User not updated: {resp_json["detail"]["error"]}',
+            )
+        ]
     return [c.FireEvent(event=GoToEvent(url=f"/users/{form_dict['new_name']}/"))]
 
 
@@ -195,9 +186,6 @@ async def delete_user(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
-    """
-    User profile page, the frontend will fetch this when the user visits `/users/{id}/`.
-    """
     client = await services.aget(AsyncClient)
     resp = await client.delete("/users", params={"name": name})
     if resp.status_code != HTTPStatus.OK:
@@ -205,7 +193,7 @@ async def delete_user(
         return [
             c.FireEvent(
                 event=GoToEvent(url=f"/users/{name}/"),
-                message=f'USER Exists: {resp_json["detail"]["error"]}',
+                message=f'User not deleted: {resp_json["detail"]["error"]}',
             )
         ]
     return [c.FireEvent(event=GoToEvent(url="/users/"))]
@@ -227,9 +215,28 @@ async def users_table(
         c.Heading(text="Users", level=2),
         c.Div(
             components=[
-                c.Link(
-                    components=[c.Button(text="Add User")],
-                    on_click=GoToEvent(url="/users/new/"),
+                c.Button(
+                    text="Add User",
+                    on_click=PageEvent(name="add-user"),
+                ),
+                c.Modal(
+                    title="Add User",
+                    body=[
+                        c.ModelForm(
+                            model=UserCreationForm,
+                            submit_url="/api/users/new/",
+                            loading=[c.Spinner(text="Adding...")],
+                            footer=[],
+                            submit_trigger=PageEvent(name="modal-form-add-user-submit"),
+                        ),
+                    ],
+                    footer=[
+                        c.Button(
+                            text="Submit",
+                            on_click=PageEvent(name="modal-form-add-user-submit"),
+                        ),
+                    ],
+                    open_trigger=PageEvent(name="add-user"),
                 ),
             ],
             class_name="mb-3",
