@@ -2,12 +2,9 @@ import edgedb
 import svcs
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi import FastAPI
-from httpx import AsyncClient
-
-from .config import settings
 
 
-async def _lifespan(app: FastAPI, registry: svcs.Registry, need_fastui: bool):
+async def _lifespan(app: FastAPI, registry: svcs.Registry):
     # EdgeDB client
     db_client = edgedb.create_async_client()
 
@@ -22,24 +19,6 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, need_fastui: bool):
         setup_db_client,
         ping=ping_db_callable,
     )
-
-    if need_fastui:
-        # Web client
-        host = str(settings.host).rstrip("/")  # any better ways?
-        base_url = f"{host}:{settings.port}"
-        client = AsyncClient(base_url=base_url)
-
-        async def setup_httpx_client():
-            yield client
-
-        async def ping_web_callable(_client):
-            return await _client.get("/covered-by-fastui.users.html_landing")
-
-        registry.register_factory(
-            AsyncClient,
-            setup_httpx_client,
-            ping=ping_web_callable,
-        )
 
     yield
 

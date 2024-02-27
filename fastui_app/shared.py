@@ -1,5 +1,3 @@
-from __future__ import annotations as _annotations
-
 from fastui import AnyComponent
 from fastui import components as c
 from fastui.events import GoToEvent

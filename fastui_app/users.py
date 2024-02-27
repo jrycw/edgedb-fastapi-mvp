@@ -1,35 +1,30 @@
-from http import HTTPStatus  # noqa: F401
-from typing import Annotated  # noqa: F401
+from http import HTTPStatus
+from typing import Annotated
 
 import svcs
-from edgedb.asyncio_client import AsyncIOClient  # noqa: F401
 from fastapi import (
-    APIRouter,  # noqa: F401
+    APIRouter,
     HTTPException,  # noqa: F401
 )
-from fastapi.responses import HTMLResponse  # noqa: F401
-from fastui import AnyComponent, FastUI, prebuilt_html  # noqa: F401
-from fastui import components as c  # noqa: F401
-from fastui.components.display import DisplayLookup, DisplayMode  # noqa: F401
+from fastapi.responses import HTMLResponse
+from fastui import AnyComponent, FastUI, prebuilt_html
+from fastui import components as c
+from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import BackEvent, GoToEvent, PageEvent  # noqa:F401
-from fastui.forms import fastui_form  # noqa: F401
-from httpx import AsyncClient  # noqa: F401
+from fastui.forms import fastui_form
+from httpx import AsyncClient
 
-from ..models import UserFull  # noqa: F401
-from .forms import UserCreationForm, UserUpdateForm  # noqa: F401
-from .queries.check_user_deletable_async_edgeql import (
-    check_user_deletable,  # noqa: F401
-)
-from .shared import demo_page  # noqa: F401
+from .forms import UserCreationForm, UserUpdateForm
+from .models import UserFull
+from .shared import demo_page
 from .utils import _raise_for_status  # noqa: F401
 
-router = APIRouter()
+router = APIRouter(include_in_schema=False)
 
 
 @router.get("/api/users/new/", response_model=FastUI, response_model_exclude_none=True)
 async def display_add_user():
     return demo_page(
-        c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
         c.Heading(text="Add User", level=2),
         c.Paragraph(text="Add a user to the system"),
         c.ModelForm(
@@ -72,16 +67,13 @@ async def post_user(
 async def user_profile(
     services: svcs.fastapi.DepContainer, name: str
 ) -> list[AnyComponent]:
-    """
-    User profile page, the frontend will fetch this when the user visits `/users/{id}/`.
-    """
     client = await services.aget(AsyncClient)
-    resp = await client.get("/users", params={"name": name})
+    resp = await client.get("/internal/users", params={"name": name})  # get n_events
     resp_json = _raise_for_status(resp)  # try using prebuilt_html
     user = UserFull(**resp_json)
     page_comp_list = [
         c.Heading(text=user.name, level=2),
-        c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
+        c.Link(components=[c.Text(text="Back")], on_click=GoToEvent(url="/users/")),
         c.Details(data=user),
         c.Div(
             components=[
@@ -116,9 +108,7 @@ async def user_profile(
             class_name="mb-3",
         ),
     ]
-
-    db_client = await services.aget(AsyncIOClient)
-    if await check_user_deletable(db_client, name=name):
+    if resp_json["n_events"] == 0:
         page_comp_list.append(
             c.Div(
                 components=[
