@@ -29,6 +29,7 @@ class NoPydanticValidation:
 class GetEventByNameResult(NoPydanticValidation):
     id: uuid.UUID
     name: str
+    created_at: datetime.datetime
     address: str | None
     schedule: datetime.datetime | None
     host: GetEventByNameResultHost | None
@@ -49,6 +50,7 @@ async def get_event_by_name(
         """\
         select Event {
             name, 
+            created_at,
             address,
             schedule,
             host : {name}

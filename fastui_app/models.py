@@ -34,6 +34,10 @@ class UserFull(Auditable, UserID, UserBase):
     pass
 
 
+class UserRepr(UserFull):
+    n_events: int
+
+
 ################################
 # Event
 ################################
@@ -48,8 +52,8 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    address: str
-    schedule: datetime.datetime
+    address: str | None
+    schedule: datetime.datetime | None
     host_name: str = Field(max_length=50)
 
 
@@ -58,6 +62,10 @@ class EventUpdate(EventCreate):
 
 
 class EventFull(Auditable, EventID, EventCreate):
+    pass
+
+
+class EventRepr(EventFull):
     pass
 
 

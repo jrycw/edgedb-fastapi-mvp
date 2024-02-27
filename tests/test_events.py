@@ -27,7 +27,9 @@ def test_get_event(gen_event, gen_user, test_db_client, test_client, events_url)
 
     test_db_client.query_single.return_value = (
         get_event_by_name_qry.GetEventByNameResult(
-            **event.model_dump(include={"id", "name", "address", "schedule"}),
+            **event.model_dump(
+                include={"id", "name", "created_at", "address", "schedule"}
+            ),
             host=host,
         )
     )
@@ -39,6 +41,7 @@ def test_get_event(gen_event, gen_user, test_db_client, test_client, events_url)
     assert response.status_code == HTTPStatus.OK
     assert resp_json["id"] == event.id
     assert resp_json["name"] == event.name
+    assert resp_json["created_at"] == event.created_at.isoformat()
     assert resp_json["address"] == event.address
     assert resp_json["schedule"] == event.schedule.isoformat()
     assert resp_json["host"]["id"] == user.id
@@ -57,11 +60,15 @@ def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url
 
     test_db_client.query.return_value = [
         get_events_qry.GetEventsResult(
-            **event1.model_dump(include={"id", "name", "address", "schedule"}),
+            **event1.model_dump(
+                include={"id", "name", "created_at", "address", "schedule"}
+            ),
             host=host1,
         ),
         get_events_qry.GetEventsResult(
-            **event2.model_dump(include={"id", "name", "address", "schedule"}),
+            **event2.model_dump(
+                include={"id", "name", "created_at", "address", "schedule"}
+            ),
             host=host2,
         ),
     ]
@@ -73,6 +80,7 @@ def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url
     assert response.status_code == HTTPStatus.OK
     assert first_event["id"] == event1.id
     assert first_event["name"] == event1.name
+    assert first_event["created_at"] == event1.created_at.isoformat()
     assert first_event["address"] == event1.address
     assert first_event["schedule"] == event1.schedule.isoformat()
     assert first_event["host"]["id"] == user1.id
@@ -80,6 +88,7 @@ def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url
 
     assert second_event["id"] == event2.id
     assert second_event["name"] == event2.name
+    assert second_event["created_at"] == event2.created_at.isoformat()
     assert second_event["address"] == event2.address
     assert second_event["schedule"] == event2.schedule.isoformat()
     assert second_event["host"]["id"] == user2.id

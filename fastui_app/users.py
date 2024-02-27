@@ -6,8 +6,7 @@ from fastapi import (
     APIRouter,
     HTTPException,  # noqa: F401
 )
-from fastapi.responses import HTMLResponse
-from fastui import AnyComponent, FastUI, prebuilt_html
+from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import BackEvent, GoToEvent, PageEvent  # noqa:F401
@@ -15,7 +14,7 @@ from fastui.forms import fastui_form
 from httpx import AsyncClient
 
 from .forms import UserCreationForm, UserUpdateForm
-from .models import UserFull
+from .models import UserRepr  # noqa: F401
 from .shared import demo_page
 from .utils import _raise_for_status  # noqa: F401
 
@@ -24,7 +23,7 @@ router = APIRouter(include_in_schema=False)
 
 @router.get("/api/users/new/", response_model=FastUI, response_model_exclude_none=True)
 async def display_add_user():
-    return demo_page(
+    page_comp_list = [
         c.Heading(text="Add User", level=2),
         c.Paragraph(text="Add a user to the system"),
         c.ModelForm(
@@ -32,7 +31,8 @@ async def display_add_user():
             display_mode="page",
             submit_url="/api/users/new/",
         ),
-    )
+    ]
+    return demo_page(*page_comp_list)
 
 
 @router.post(
@@ -68,12 +68,12 @@ async def user_profile(
     services: svcs.fastapi.DepContainer, name: str
 ) -> list[AnyComponent]:
     client = await services.aget(AsyncClient)
-    resp = await client.get("/internal/users", params={"name": name})  # get n_events
+    resp = await client.get("/users", params={"name": name})
     resp_json = _raise_for_status(resp)  # try using prebuilt_html
-    user = UserFull(**resp_json)
+    user = UserRepr(**resp_json)
     page_comp_list = [
         c.Heading(text=user.name, level=2),
-        c.Link(components=[c.Text(text="Back")], on_click=GoToEvent(url="/users/")),
+        c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
         c.Details(data=user),
         c.Div(
             components=[
@@ -166,7 +166,7 @@ async def update_user(
                 message=f'User not updated: {resp_json["detail"]["error"]}',
             )
         ]
-    return [c.FireEvent(event=GoToEvent(url=f"/users/{form_dict['new_name']}/"))]
+    return [c.FireEvent(event=GoToEvent(url="/users/"))]
 
 
 @router.post(
@@ -200,8 +200,8 @@ async def users_table(
     client = await services.aget(AsyncClient)
     resp = await client.get("/users")
     resp_json = _raise_for_status(resp, HTTPStatus.OK)
-    users = [UserFull(**user) for user in resp_json]
-    return demo_page(
+    users = [UserRepr(**user) for user in resp_json]
+    page_comp_list = [
         c.Heading(text="Users", level=2),
         c.Div(
             components=[
@@ -231,28 +231,20 @@ async def users_table(
             ],
             class_name="mb-3",
         ),
-        c.Table(
-            data=users,
-            columns=[
-                DisplayLookup(
-                    field="name",
-                    on_click=GoToEvent(url="/users/{name}/"),
-                ),
-                DisplayLookup(field="id", mode=DisplayMode.auto),
-                DisplayLookup(field="created_at", mode=DisplayMode.date),
-            ],
-        ),
-    )
+    ]
+    if users:
+        page_comp_list.append(
+            c.Table(
+                data=users,
+                columns=[
+                    DisplayLookup(
+                        field="name",
+                        on_click=GoToEvent(url="/users/{name}/"),
+                    ),
+                    DisplayLookup(field="created_at", mode=DisplayMode.date),
+                    DisplayLookup(field="n_events", mode=DisplayMode.plain),
+                ],
+            ),
+        )
 
-
-@router.get("/api/", response_model=FastUI, response_model_exclude_none=True)
-async def home() -> list[AnyComponent]:
-    return demo_page(
-        c.Heading(text="Home", level=1),
-    )
-
-
-@router.get("/{path:path}")
-async def html_landing() -> HTMLResponse:
-    """Simple HTML page which serves the React router, comes last as it matches all paths."""
-    return HTMLResponse(prebuilt_html(title="FastUI Demo"))
+    return demo_page(*page_comp_list)

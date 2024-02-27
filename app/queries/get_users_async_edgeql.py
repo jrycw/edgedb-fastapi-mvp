@@ -30,6 +30,7 @@ class GetUsersResult(NoPydanticValidation):
     id: uuid.UUID
     name: str
     created_at: datetime.datetime
+    n_events: int
 
 
 async def get_users(
@@ -37,6 +38,9 @@ async def get_users(
 ) -> list[GetUsersResult]:
     return await executor.query(
         """\
-        select User {name, created_at};\
+        select User {name,
+                    created_at, 
+                    n_events:= count(.<host[is Event])
+                }\
         """,
     )

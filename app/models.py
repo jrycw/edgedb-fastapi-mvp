@@ -48,8 +48,8 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
-    address: str
-    schedule: datetime.datetime
+    address: str | None
+    schedule: datetime.datetime | None
     host_name: str = Field(max_length=50)
 
 

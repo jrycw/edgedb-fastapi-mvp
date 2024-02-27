@@ -1,1 +1,1 @@
-select Event {name, address, schedule, host : {name}};
+select Event {name, created_at, address, schedule, host : {name}};

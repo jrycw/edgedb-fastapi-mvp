@@ -30,6 +30,7 @@ class GetUserByNameResult(NoPydanticValidation):
     id: uuid.UUID
     name: str
     created_at: datetime.datetime
+    n_events: int
 
 
 async def get_user_by_name(
@@ -39,7 +40,11 @@ async def get_user_by_name(
 ) -> GetUserByNameResult | None:
     return await executor.query_single(
         """\
-        select User {name, created_at} filter User.name=<str>$name;\
+        select User {name,
+                    created_at, 
+                    n_events:= count(.<host[is Event])
+                } 
+        filter User.name=<str>$name;\
         """,
         name=name,
     )

@@ -23,7 +23,7 @@ class TestUserData(TestAuditable):
 
 
 class TestEventData(TestAuditable):
-    name: str = Field(default_factory=lambda: faker.text(max_nb_chars=10))
+    name: str = Field(default_factory=lambda: faker.text(max_nb_chars=20))
     address: str = Field(default_factory=faker.street_address)
     schedule: datetime.datetime = Field(
         default_factory=lambda: faker.date_time().replace(

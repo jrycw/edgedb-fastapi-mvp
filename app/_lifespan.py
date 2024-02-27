@@ -3,8 +3,10 @@ import svcs
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi import FastAPI
 
+from ._fixtures import add_events, add_users
 
-async def _lifespan(app: FastAPI, registry: svcs.Registry):
+
+async def _lifespan(app: FastAPI, registry: svcs.Registry, prefill: bool = False):
     # EdgeDB client
     db_client = edgedb.create_async_client()
 
@@ -19,6 +21,11 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry):
         setup_db_client,
         ping=ping_db_callable,
     )
+
+    # Add users and events for testing
+    if prefill:
+        await add_users(db_client)
+        await add_events(db_client)
 
     yield
 

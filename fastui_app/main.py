@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from fastui_app import users
+from fastui_app import common, events, users
 
 from .lifespan import lifespan
 
@@ -18,7 +18,10 @@ def make_app(lifespan):
         allow_headers=["*"],
     )
 
+    # order matters
     app.include_router(users.router)
+    app.include_router(events.router)
+    app.include_router(common.router)
 
     return app
 

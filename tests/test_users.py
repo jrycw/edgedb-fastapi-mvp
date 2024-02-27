@@ -21,7 +21,7 @@ def test_get_user(gen_user, test_db_client, test_client, users_url):
     user = gen_user()
 
     test_db_client.query_single.return_value = get_user_by_name_qry.GetUserByNameResult(
-        **user.model_dump()
+        **user.model_dump(), n_events=0
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -39,10 +39,10 @@ def test_get_users(gen_user, test_db_client, test_client, users_url):
 
     test_db_client.query.return_value = [
         get_users_qry.GetUsersResult(
-            **user1.model_dump(include={"id", "name", "created_at"})
+            **user1.model_dump(include={"id", "name", "created_at"}), n_events=0
         ),
         get_users_qry.GetUsersResult(
-            **user2.model_dump(include={"id", "name", "created_at"})
+            **user2.model_dump(include={"id", "name", "created_at"}), n_events=0
         ),
     ]
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
