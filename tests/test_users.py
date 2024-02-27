@@ -17,11 +17,11 @@ from .lifespan import t_lifespan
 ################################
 # Good cases
 ################################
-def test_get_user(gen_user, test_db_client, test_client, users_url):
-    user = gen_user()
+def test_get_user(gen_user_with_n_event, test_db_client, test_client, users_url):
+    user = gen_user_with_n_event()
 
     test_db_client.query_single.return_value = get_user_by_name_qry.GetUserByNameResult(
-        **user.model_dump(), n_events=0
+        **user.model_dump()
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -34,15 +34,15 @@ def test_get_user(gen_user, test_db_client, test_client, users_url):
     assert resp_json["created_at"] == user.created_at.isoformat()
 
 
-def test_get_users(gen_user, test_db_client, test_client, users_url):
-    user1, user2 = gen_user(), gen_user()
+def test_get_users(gen_user_with_n_event, test_db_client, test_client, users_url):
+    user1, user2 = gen_user_with_n_event(), gen_user_with_n_event()
 
     test_db_client.query.return_value = [
         get_users_qry.GetUsersResult(
-            **user1.model_dump(include={"id", "name", "created_at"}), n_events=0
+            **user1.model_dump(include={"id", "name", "created_at", "n_events"})
         ),
         get_users_qry.GetUsersResult(
-            **user2.model_dump(include={"id", "name", "created_at"}), n_events=0
+            **user2.model_dump(include={"id", "name", "created_at", "n_events"})
         ),
     ]
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.main import make_app
 
-from .factories import TestEventData, TestUserData
+from .factories import TestEventData, TestUserData, TestUserDataWithnEvents
 from .lifespan import t_lifespan
 
 
@@ -30,6 +30,11 @@ def health_url():
 @pytest.fixture
 def gen_user():
     return lambda: TestUserData()
+
+
+@pytest.fixture
+def gen_user_with_n_event():
+    return lambda: TestUserDataWithnEvents()
 
 
 @pytest.fixture
