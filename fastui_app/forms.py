@@ -1,8 +1,10 @@
 import datetime
 
 from pydantic import BaseModel, Field, field_validator
+from zoneinfo import ZoneInfo
 
-from .models import EventBase, UserCreate
+from .config import settings
+from .models import EventFull, UserFull
 
 """
 Q: Why using forms instead of models?
@@ -20,16 +22,57 @@ A:
 * While displaying something like listview or detailview.
 """
 
+################################
+# Repr
+################################
+user_prefer_zoneinfo = ZoneInfo(settings.tz)
 
-class UserCreationForm(UserCreate):
+
+class DisplayAuditable:
+    @field_validator("created_at")
+    @classmethod
+    def validate_created_at(cls, v: datetime.datetime) -> datetime.datetime:
+        """This function decides how to render `Created_at`"""
+        return v.astimezone(user_prefer_zoneinfo).replace(microsecond=0)
+
+
+class UserRepr(UserFull, DisplayAuditable):
     pass
 
 
-class UserUpdateForm(BaseModel):
-    """
-    We don't inherit `UserCreationForm`, since we know the `name` already from frontend already.
-    """
+class EventRepr(EventFull, DisplayAuditable):
+    @field_validator("schedule")
+    @classmethod
+    def validate_schedule(cls, v: str | None) -> str | None:
+        """This function decides how to render `schedule`"""
+        if v is not None:
+            v = (
+                datetime.datetime.fromisoformat(v)
+                .astimezone(user_prefer_zoneinfo)
+                .isoformat()
+            )
+        return v
 
+
+################################
+# User
+################################
+
+
+class UserNameCreationForm(BaseModel):
+    name: str = Field(title="Username", description="max length: 50", max_length=50)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        return v.strip()
+
+
+class UserCreationForm(UserNameCreationForm):
+    pass
+
+
+class UserNewNameUpdateForm(BaseModel):
     new_name: str = Field(
         title="New Username", description="max length: 50", max_length=50
     )
@@ -40,26 +83,37 @@ class UserUpdateForm(BaseModel):
         return v.strip()
 
 
+class UserUpdateForm(UserNewNameUpdateForm):
+    pass
+
+
 ################################
 # Event
 ################################
-class EventCreationForm(EventBase):
-    """
-    By using `datetime.datetime` for `schedule`, we can get the UI Widget
-    """
+class EventNameCreationForm(BaseModel):
+    name: str = Field(title="Eventname", description="max length: 50", max_length=50)
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        return v.strip()
+
+
+class EventHostNameCreationForm(BaseModel):
     host_name: str = Field(
         title="Hostname",
         description="max length: 50 (This will create a new User if not found)",
         max_length=50,
     )
-    address: str | None = None
-    schedule: datetime.datetime | None = None
 
     @field_validator("host_name")
     @classmethod
     def validate_host_name(cls, v: str) -> str:
         return v.strip()
+
+
+class EventAddressCreationForm(BaseModel):
+    address: str | None = None
 
     @field_validator("address")
     @classmethod
@@ -68,27 +122,36 @@ class EventCreationForm(EventBase):
             v = v.strip()
         return v
 
+
+class EventScheduleCreationForm(BaseModel):
+    """
+    By using `datetime.datetime` for `schedule`, we can get the UI Widget
+    """
+
+    schedule: datetime.datetime | None = None
+
     @field_validator("schedule")
     @classmethod
     def validate_schedule(cls, v: datetime.datetime | None) -> datetime.datetime | None:
-        """Coercing timezone info"""
+        """Add timezone info"""
         if v is not None:
             v = v.astimezone(datetime.timezone.utc)
         return v
 
 
-class EventUpdateForm(BaseModel):
+class EventCreationForm(
+    EventScheduleCreationForm,
+    EventAddressCreationForm,
+    EventHostNameCreationForm,
+    EventNameCreationForm,
+):
+    pass
+
+
+class EventNewNameUpdateForm(BaseModel):
     new_name: str | None = Field(
         default=None, title="New Eventname", description="max length: 50", max_length=50
     )
-    host_name: str | None = Field(
-        default=None,
-        title="Hostname",
-        description="max length: 50 (This will create a new User if not found)",
-        max_length=50,
-    )
-    address: str | None = None
-    schedule: datetime.datetime | None = None
 
     @field_validator("new_name")
     @classmethod
@@ -97,12 +160,25 @@ class EventUpdateForm(BaseModel):
             v = v.strip()
         return v
 
+
+class EvenHostNameUpdateForm(BaseModel):
+    host_name: str | None = Field(
+        default=None,
+        title="Hostname",
+        description="max length: 50 (This will create a new User if not found)",
+        max_length=50,
+    )
+
     @field_validator("host_name")
     @classmethod
     def validate_host_name(cls, v: str | None) -> str | None:
         if v is not None:
             v = v.strip()
         return v
+
+
+class EvenAddressUpdateForm(BaseModel):
+    address: str | None = None
 
     @field_validator("address")
     @classmethod
@@ -111,10 +187,23 @@ class EventUpdateForm(BaseModel):
             v = v.strip()
         return v
 
+
+class EventScheduleUpdateForm(BaseModel):
+    schedule: datetime.datetime | None = None
+
     @field_validator("schedule")
     @classmethod
     def validate_schedule(cls, v: datetime.datetime | None) -> datetime.datetime | None:
-        """Coercing timezone info"""
+        """Add timezone info"""
         if v is not None:
             v = v.astimezone(datetime.timezone.utc)
         return v
+
+
+class EventUpdateForm(
+    EventScheduleUpdateForm,
+    EvenAddressUpdateForm,
+    EvenHostNameUpdateForm,
+    EventNewNameUpdateForm,
+):
+    pass

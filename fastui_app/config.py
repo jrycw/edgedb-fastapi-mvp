@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     backendhost: HttpUrl = "http://localhost"
     backendport: int = 8000
 
+    tz: str = "UTC"
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

@@ -3,7 +3,7 @@ from http import HTTPStatus
 from fastapi import HTTPException
 from fastapi.responses import Response
 
-from .models import EventRepr
+from .forms import EventRepr, UserRepr
 
 
 def _raise_for_status(response: Response, status_code: HTTPStatus = HTTPStatus.OK):
@@ -14,6 +14,10 @@ def _raise_for_status(response: Response, status_code: HTTPStatus = HTTPStatus.O
             detail=resp_json,
         )
     return resp_json
+
+
+def _form_user_repr(resp_json: dict[str, str]) -> UserRepr:
+    return UserRepr(**resp_json)
 
 
 def _form_event_repr(resp_json: dict[str, str | dict[str, str] | None]) -> EventRepr:

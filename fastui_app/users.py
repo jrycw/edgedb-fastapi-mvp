@@ -11,9 +11,8 @@ from fastui.forms import SelectSearchResponse, fastui_form
 from httpx import AsyncClient
 
 from .forms import UserCreationForm, UserUpdateForm
-from .models import UserRepr
 from .shared import demo_page
-from .utils import _raise_for_status
+from .utils import _form_user_repr, _raise_for_status
 
 router = APIRouter(include_in_schema=False)
 
@@ -64,7 +63,7 @@ async def user_detailview(
     client = await services.aget(AsyncClient)
     resp = await client.get("/users", params={"name": name})
     resp_json = _raise_for_status(resp)  # try using prebuilt_html
-    user = UserRepr(**resp_json)
+    user = _form_user_repr(resp_json)
     page_comp_list = [
         c.Heading(text=user.name, level=2),
         c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
@@ -194,7 +193,7 @@ async def user_listview(
     client = await services.aget(AsyncClient)
     resp = await client.get("/users")
     resp_json_list = _raise_for_status(resp, HTTPStatus.OK)
-    users = [UserRepr(**resp_json) for resp_json in resp_json_list]
+    users = [_form_user_repr(resp_json) for resp_json in resp_json_list]
     page_comp_list = [
         c.Heading(text="Users", level=2),
         c.Div(
