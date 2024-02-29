@@ -1,15 +1,19 @@
+import os
+import sys
+
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+sys.path.append(os.getcwd())
 from fastui_app import common, events, users
-
-from .lifespan import lifespan
+from fastui_app.config import settings
+from fastui_app.lifespan import lifespan
 
 
 def make_app(lifespan):
     app = FastAPI(lifespan=lifespan)
 
-    # Set all CORS enabled origins
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -27,3 +31,12 @@ def make_app(lifespan):
 
 
 app = make_app(lifespan)
+
+if __name__ == "__main__":
+    print(f"Frontend: {settings=}")
+    uvicorn.run(
+        "main:app",
+        host=settings.frontendhost,
+        port=settings.frontendport,
+        reload=settings.frontendreload,
+    )
