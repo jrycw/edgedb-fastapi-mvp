@@ -31,7 +31,7 @@ class DeleteEventResult(NoPydanticValidation):
     name: str
     address: str | None
     schedule: datetime.datetime | None
-    host: DeleteEventResultHost | None
+    host: DeleteEventResultHost
 
 
 @dataclasses.dataclass

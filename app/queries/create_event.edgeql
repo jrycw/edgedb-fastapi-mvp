@@ -1,15 +1,18 @@
 with name := <str>$name,
-    address := <str>$address,
-    schedule := <datetime>$schedule,
-    host_name := <str>$host_name
-
+    address := <optional str>$address ?? <str>{},
+    schedule := <datetime>(<optional str>$schedule ?? <str>{}),
+    host_name := <str>$host_name,
 select (
     insert Event {
         name := name,
         address := address,
         schedule := schedule,
-        host := assert_single(
-            (select detached User filter .name = host_name)
+        host := (
+            with u:= assert_single((select User filter .name = host_name)),
+            select 
+            if exists u then (u)
+            else if exists host_name then (insert User {name:= host_name})
+            else (<User>{})
         )
     }
 ) {name, address, schedule, host: {name}};

@@ -1,15 +1,9 @@
-from fastapi import (
-    APIRouter,
-    HTTPException,  # noqa: F401
-)
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from fastui import AnyComponent, FastUI, prebuilt_html
 from fastui import components as c
-from fastui.events import BackEvent, GoToEvent, PageEvent  # noqa:F401
 
-from .models import EventFull, UserFull  # noqa: F401
 from .shared import demo_page
-from .utils import _raise_for_status  # noqa: F401
 
 router = APIRouter(include_in_schema=False)
 

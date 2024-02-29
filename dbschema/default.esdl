@@ -22,6 +22,6 @@ module default {
     }
     address : str;
     schedule : datetime;
-    host : User;
+    required host : User;
   }
 }

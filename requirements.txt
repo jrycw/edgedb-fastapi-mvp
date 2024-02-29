@@ -10,3 +10,4 @@ pytest-faker
 pydantic-settings
 fastui
 python-multipart
+tzdata 

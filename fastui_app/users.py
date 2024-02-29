@@ -2,37 +2,31 @@ from http import HTTPStatus
 from typing import Annotated
 
 import svcs
-from fastapi import (
-    APIRouter,
-    HTTPException,  # noqa: F401
-)
+from fastapi import APIRouter
 from fastui import AnyComponent, FastUI
 from fastui import components as c
 from fastui.components.display import DisplayLookup, DisplayMode
-from fastui.events import BackEvent, GoToEvent, PageEvent  # noqa:F401
-from fastui.forms import fastui_form
+from fastui.events import BackEvent, GoToEvent, PageEvent
+from fastui.forms import SelectSearchResponse, fastui_form
 from httpx import AsyncClient
 
 from .forms import UserCreationForm, UserUpdateForm
-from .models import UserRepr  # noqa: F401
+from .models import UserRepr
 from .shared import demo_page
-from .utils import _raise_for_status  # noqa: F401
+from .utils import _raise_for_status
 
 router = APIRouter(include_in_schema=False)
 
 
-@router.get("/api/users/new/", response_model=FastUI, response_model_exclude_none=True)
-async def display_add_user():
-    page_comp_list = [
-        c.Heading(text="Add User", level=2),
-        c.Paragraph(text="Add a user to the system"),
-        c.ModelForm(
-            model=UserCreationForm,
-            display_mode="page",
-            submit_url="/api/users/new/",
-        ),
-    ]
-    return demo_page(*page_comp_list)
+@router.get("/api/users/search", response_model=SelectSearchResponse)
+async def user_ilike_searchview(
+    services: svcs.fastapi.DepContainer, name: str | None = None
+):
+    client = await services.aget(AsyncClient)
+    resp = await client.get("/users/search", params={"name": name})
+    usernames = resp.json()
+    options = [{"label": name, "value": name} for name in usernames]
+    return SelectSearchResponse(options=options)
 
 
 @router.post(
@@ -40,7 +34,7 @@ async def display_add_user():
     response_model=FastUI,
     response_model_exclude_none=True,
 )
-async def post_user(
+async def user_createview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[UserCreationForm, fastui_form(UserCreationForm)],
 ):
@@ -64,7 +58,7 @@ async def post_user(
 @router.get(
     "/api/users/{name}/", response_model=FastUI, response_model_exclude_none=True
 )
-async def user_profile(
+async def user_detailview(
     services: svcs.fastapi.DepContainer, name: str
 ) -> list[AnyComponent]:
     client = await services.aget(AsyncClient)
@@ -75,82 +69,82 @@ async def user_profile(
         c.Heading(text=user.name, level=2),
         c.Link(components=[c.Text(text="Back")], on_click=BackEvent()),
         c.Details(data=user),
-        c.Div(
-            components=[
+    ]
+
+    # update user button
+    modal_comps = [
+        c.Button(
+            text="Update User",
+            on_click=PageEvent(name="update-user"),
+            class_name="+ ms-2",
+        ),
+        c.Modal(
+            title="Update User",
+            body=[
+                c.Paragraph(text=f"Confirm to update User (username={name})"),
+                c.ModelForm(
+                    model=UserUpdateForm,
+                    submit_url=f"/api/users/{name}/update/",
+                    loading=[c.Spinner(text="Updating...")],
+                    footer=[],
+                    submit_trigger=PageEvent(name="modal-form-update-user-submit"),
+                ),
+            ],
+            footer=[
                 c.Button(
-                    text="Update User",
-                    on_click=PageEvent(name="update-user"),
+                    text="Submit",
+                    on_click=PageEvent(name="modal-form-update-user-submit"),
+                ),
+            ],
+            open_trigger=PageEvent(name="update-user"),
+        ),
+    ]
+
+    # delete user button
+    if resp_json["n_events"] == 0:
+        modal_comps.extend(
+            [
+                c.Button(
+                    text="Delete User",
+                    on_click=PageEvent(name="delete-user"),
                     class_name="+ ms-2",
                 ),
                 c.Modal(
-                    title="Update User",
+                    title="Delete User",
                     body=[
-                        c.Paragraph(text=f"Confirm to update User(username={name})"),
-                        c.ModelForm(
-                            model=UserUpdateForm,
-                            submit_url=f"/api/users/{name}/update/",
-                            loading=[c.Spinner(text="Updating...")],
+                        c.Paragraph(text=f"Confirm to delete User (username={name})"),
+                        c.Form(
+                            form_fields=[],
+                            submit_url=f"/api/users/{name}/delete/",
+                            loading=[c.Spinner(text="Deleting...")],
                             footer=[],
-                            submit_trigger=PageEvent(
-                                name="modal-form-update-user-submit"
-                            ),
+                            submit_trigger=PageEvent(name="form-delete-user-submit"),
                         ),
                     ],
                     footer=[
                         c.Button(
                             text="Submit",
-                            on_click=PageEvent(name="modal-form-update-user-submit"),
+                            on_click=PageEvent(name="form-delete-user-submit"),
                         ),
                     ],
-                    open_trigger=PageEvent(name="update-user"),
+                    open_trigger=PageEvent(name="delete-user"),
                 ),
-            ],
-            class_name="mb-3",
-        ),
-    ]
-    if resp_json["n_events"] == 0:
-        page_comp_list.append(
-            c.Div(
-                components=[
-                    c.Button(
-                        text="Delete User",
-                        on_click=PageEvent(name="delete-user"),
-                        class_name="+ ms-2",
-                    ),
-                    c.Modal(
-                        title="Delete User",
-                        body=[
-                            c.Paragraph(
-                                text=f"Confirm to delete User(username={name})"
-                            ),
-                            c.Form(
-                                form_fields=[],
-                                submit_url=f"/api/users/{name}/delete/",
-                                loading=[c.Spinner(text="Deleting...")],
-                                footer=[],
-                                submit_trigger=PageEvent(
-                                    name="form-delete-user-submit"
-                                ),
-                            ),
-                        ],
-                        footer=[
-                            c.Button(
-                                text="Submit",
-                                on_click=PageEvent(name="form-delete-user-submit"),
-                            ),
-                        ],
-                        open_trigger=PageEvent(name="delete-user"),
-                    ),
-                ],
-            ),
+            ]
         )
+
+    page_comp_list.append(
+        c.Div(
+            components=modal_comps,
+            class_name="mb-3",
+        )
+    )
     return demo_page(*page_comp_list)
 
 
 @router.post(
     "/api/users/{name}/update/", response_model=FastUI, response_model_exclude_none=True
 )
-async def update_user(
+async def user_updateview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[UserUpdateForm, fastui_form(UserUpdateForm)],
     name: str,
@@ -172,7 +166,7 @@ async def update_user(
 @router.post(
     "/api/users/{name}/delete/", response_model=FastUI, response_model_exclude_none=True
 )
-async def delete_user(
+async def user_deleteview(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
@@ -190,7 +184,7 @@ async def delete_user(
 
 
 @router.get("/api/users/", response_model=FastUI, response_model_exclude_none=True)
-async def users_table(
+async def user_listview(
     services: svcs.fastapi.DepContainer,
 ) -> list[AnyComponent]:
     """
@@ -199,8 +193,8 @@ async def users_table(
     """
     client = await services.aget(AsyncClient)
     resp = await client.get("/users")
-    resp_json = _raise_for_status(resp, HTTPStatus.OK)
-    users = [UserRepr(**user) for user in resp_json]
+    resp_json_list = _raise_for_status(resp, HTTPStatus.OK)
+    users = [UserRepr(**resp_json) for resp_json in resp_json_list]
     page_comp_list = [
         c.Heading(text="Users", level=2),
         c.Div(

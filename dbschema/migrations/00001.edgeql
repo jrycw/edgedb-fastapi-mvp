@@ -1,4 +1,4 @@
-CREATE MIGRATION m1t4s2zsgjiurqmwgfreo6wt7duc2h44fes3m3qych2rirxwmklgqa
+CREATE MIGRATION m1hap22pa54folvlgr5w4iwft7xhw43nd32txuobmaf2b7rbkfujzq
     ONTO initial
 {
   CREATE ABSTRACT TYPE default::Auditable {
@@ -14,7 +14,7 @@ CREATE MIGRATION m1t4s2zsgjiurqmwgfreo6wt7duc2h44fes3m3qych2rirxwmklgqa
       };
   };
   CREATE TYPE default::Event EXTENDING default::Auditable {
-      CREATE LINK host: default::User;
+      CREATE REQUIRED LINK host: default::User;
       CREATE PROPERTY address: std::str;
       CREATE REQUIRED PROPERTY name: std::str {
           CREATE CONSTRAINT std::exclusive;

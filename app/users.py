@@ -11,9 +11,33 @@ from .queries import create_user_async_edgeql as create_user_qry
 from .queries import delete_user_async_edgeql as delete_user_qry
 from .queries import get_user_by_name_async_edgeql as get_user_by_name_qry
 from .queries import get_users_async_edgeql as get_users_qry
+from .queries import (
+    search_users_by_name_ilike_async_edgeql as search_users_by_name_ilike_qry,
+)
 from .queries import update_user_async_edgeql as update_user_qry
 
 router = APIRouter()
+
+
+################################
+# Search users
+################################
+
+
+@router.get(
+    "/users/search",
+    response_model=list[str],
+    tags=["users"],
+)
+async def search_users_ilike(
+    services: svcs.fastapi.DepContainer,
+    name: Annotated[str | None, Query(max_length=50)] = None,
+):
+    client = await services.aget(AsyncIOClient)
+    result = await search_users_by_name_ilike_qry.search_users_by_name_ilike(
+        client, name=name
+    )
+    return result
 
 
 ################################

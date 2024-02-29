@@ -32,7 +32,7 @@ class GetEventsResult(NoPydanticValidation):
     created_at: datetime.datetime
     address: str | None
     schedule: datetime.datetime | None
-    host: GetEventsResultHost | None
+    host: GetEventsResultHost
 
 
 @dataclasses.dataclass

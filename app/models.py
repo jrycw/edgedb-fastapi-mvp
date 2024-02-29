@@ -19,7 +19,7 @@ class UserID(BaseModel):
 
 
 class UserBase(BaseModel):
-    name: str = Field(max_length=50)
+    name: str = Field(title="Username", description="max length: 50", max_length=50)
 
 
 class UserCreate(UserBase):
@@ -27,11 +27,17 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserCreate):
-    new_name: str = Field(max_length=50)
+    new_name: str = Field(
+        title="New Username", description="max length: 50", max_length=50
+    )
 
 
-class UserFull(Auditable, UserID, UserBase):
+class UserFull(Auditable, UserBase, UserID):
     pass
+
+
+class UserRepr(UserFull):
+    n_events: int
 
 
 ################################
@@ -44,20 +50,28 @@ class EventID(BaseModel):
 
 
 class EventBase(BaseModel):
-    name: str
+    name: str = Field(title="Eventname", description="max length: 50", max_length=50)
 
 
 class EventCreate(EventBase):
+    host_name: str | None = Field(
+        title="Hostname", description="max length: 50", max_length=50
+    )
     address: str | None
-    schedule: datetime.datetime | None
-    host_name: str = Field(max_length=50)
+    schedule: str | None
 
 
 class EventUpdate(EventCreate):
-    new_name: str = Field(max_length=50)
+    new_name: str | None = Field(
+        title="New Eventname", description="max length: 50", max_length=50
+    )
 
 
-class EventFull(Auditable, EventID, EventCreate):
+class EventFull(Auditable, EventCreate, EventID):
+    pass
+
+
+class EventRepr(EventFull):
     pass
 
 

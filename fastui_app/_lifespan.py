@@ -1,4 +1,6 @@
+import edgedb
 import svcs
+from edgedb.asyncio_client import AsyncIOClient
 from fastapi import FastAPI
 from httpx import AsyncClient
 
@@ -18,6 +20,21 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry):
         AsyncClient,
         setup_httpx_client,
     )
+    if settings.frontenddebug:
+        # EdgeDB client
+        db_client = edgedb.create_async_client()
+
+        async def setup_db_client():
+            yield db_client
+
+        async def ping_db_callable(_db_client):
+            return await _db_client.query("select 1;")
+
+        registry.register_factory(
+            AsyncIOClient,
+            setup_db_client,
+            ping=ping_db_callable,
+        )
 
     yield
 
