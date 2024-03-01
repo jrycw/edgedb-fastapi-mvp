@@ -34,10 +34,9 @@ async def search_users_ilike(
     name: Annotated[str | None, Query(max_length=50)] = None,
 ):
     client = await services.aget(AsyncIOClient)
-    result = await search_users_by_name_ilike_qry.search_users_by_name_ilike(
+    return await search_users_by_name_ilike_qry.search_users_by_name_ilike(
         client, name=name
     )
-    return result
 
 
 ################################

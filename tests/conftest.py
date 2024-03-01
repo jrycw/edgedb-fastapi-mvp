@@ -42,13 +42,15 @@ def gen_event():
     return lambda: TestEventData()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def test_app():
+    """request 1 app(1 EdgeDB client) is enough per session"""
     yield make_app(t_lifespan)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def test_client(test_app):
+    """request 1 web client is enough per session"""
     with TestClient(test_app) as client:
         yield client
 
