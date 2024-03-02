@@ -9,11 +9,7 @@ This repository is the culmination of my journey exploring [EdgeDB](https://gith
 * Utilized additional `Pydantic` models for enhanced data validation and serialization.
 * Expanded the test suite to achieve comprehensive test coverage.
 * Experimented with the new package installer and resolver, [uv](https://github.com/astral-sh/uv).
-* Explored the use of [FastUI](https://github.com/pydantic/FastUI) for frontend components (POC for `get_users` and `get_user`).
+* Explored the use of [FastUI](https://github.com/pydantic/FastUI) for frontend components.
 
-### Images
-#### `get_users`
-![get_users](https://github.com/jrycw/edgedb-fastapi-mvp/blob/0df128a28cf20c07dd1348d3e738909b0299b54e/images/users/get_users.png)
-
-#### `get_user`
-![get_user](https://github.com/jrycw/edgedb-fastapi-mvp/blob/0df128a28cf20c07dd1348d3e738909b0299b54e/images/users/get_user.png)
+### Video
+[<img src="https://raw.githubusercontent.com/jrycw/edgedb-fastapi-mvp/master/images/users/userlist.jpg">](https://edgedb-fastapi-mvp.us-lax-1.linodeobjects.com/videos/edgedb-fastapi-mvp-demo.mp4 "edgedb-fastapi-mvp-demo")
