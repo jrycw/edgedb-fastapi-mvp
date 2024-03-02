@@ -32,13 +32,7 @@ class GetEventByNameResult(NoPydanticValidation):
     created_at: datetime.datetime
     address: str | None
     schedule: datetime.datetime | None
-    host: GetEventByNameResultHost
-
-
-@dataclasses.dataclass
-class GetEventByNameResultHost(NoPydanticValidation):
-    id: uuid.UUID
-    name: str
+    host_name: str
 
 
 async def get_event_by_name(
@@ -53,7 +47,7 @@ async def get_event_by_name(
             created_at,
             address,
             schedule,
-            host : {name}
+            host_name:=.host.name
         } filter .name=<str>$name;\
         """,
         name=name,

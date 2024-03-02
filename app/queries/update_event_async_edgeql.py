@@ -31,13 +31,7 @@ class UpdateEventResult(NoPydanticValidation):
     name: str
     address: str | None
     schedule: datetime.datetime | None
-    host: UpdateEventResultHost
-
-
-@dataclasses.dataclass
-class UpdateEventResultHost(NoPydanticValidation):
-    id: uuid.UUID
-    name: str
+    host_name: str
 
 
 async def update_event(
@@ -71,11 +65,10 @@ async def update_event(
                     with u:= assert_single((select detached User filter .name = host_name)),
                     select 
                     if exists u then (u)
-                    else if exists host_name then (insert User {name:= host_name})
-                    else (<User>{})
+                    else (insert User {name:= host_name})
                 )
             }
-        ) {name, address, schedule, host: {name}};\
+        ) {name, address, schedule, host_name:=.host.name};\
         """,
         name=name,
         new_name=new_name,

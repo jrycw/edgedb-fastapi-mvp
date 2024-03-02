@@ -60,11 +60,11 @@ class EventHostName(BaseModel):
 
 
 class EventAddress(BaseModel):
-    address: str | None
+    address: str | None = Field(default=None)
 
 
 class EventSchedule(BaseModel):
-    schedule: str | None
+    schedule: str | None = Field(default=None)
 
 
 class EventCreate(EventSchedule, EventAddress, EventHostName, EventName):

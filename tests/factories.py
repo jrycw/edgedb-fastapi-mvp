@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import datetime
 import random
 
@@ -19,7 +17,7 @@ class TestAuditable(BaseModel):
 
 
 class TestUserData(TestAuditable):
-    name: str = Field(default_factory=faker.name)
+    name: str = Field(default_factory=faker.name, max_length=50)
 
 
 class TestUserDataWithnEvents(TestUserData):
@@ -34,3 +32,4 @@ class TestEventData(TestAuditable):
             microsecond=random.randint(0, 1000000)
         )
     )
+    host_name: str = Field(default_factory=faker.name, max_length=50)

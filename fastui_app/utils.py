@@ -22,16 +22,8 @@ def _form_user_repr(resp_json: dict[str, str]) -> UserRepr:
 
 def _form_event_repr(resp_json: dict[str, str | dict[str, str] | None]) -> EventRepr:
     """
-    `host_name = resp_json["host"]["name"]` works because host
-    is required in the schema. If the rendering issue for
-    `GoToEvent(url="/users/{host_name}/")` can be resolved,
-    then we can do:
-
-    host_name = None
-    if host := resp_json["host"]:
-        host_name = host.get("name")
+    Q: Why `host_name` is required in the schema?
+    A: Since there exists a rendering issue for
+    `GoToEvent(url="/users/{host_name}/")`.
     """
-    host_name = resp_json["host"]["name"]  # since host is required in the schema
-    resp_json.update(host_name=host_name)
-    del resp_json["host"]
     return EventRepr(**resp_json)

@@ -3,5 +3,5 @@ select Event {
     created_at,
     address,
     schedule,
-    host : {name}
+    host_name:=.host.name
 } filter .name=<str>$name;

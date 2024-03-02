@@ -5,9 +5,7 @@ from edgedb.asyncio_client import AsyncIOClient
 
 from app.queries import create_event_async_edgeql as create_event_qry
 from app.queries import delete_event_async_edgeql as delete_event_qry
-from app.queries import (
-    get_event_by_name_async_edgeql as get_event_by_name_qry,
-)
+from app.queries import get_event_by_name_async_edgeql as get_event_by_name_qry
 from app.queries import get_events_async_edgeql as get_events_qry
 from app.queries import update_event_async_edgeql as update_event_qry
 
@@ -17,19 +15,12 @@ from .lifespan import t_lifespan
 ################################
 # Good cases
 ################################
-def test_get_event(gen_event, gen_user, test_db_client, test_client, events_url):
-    user, event = gen_user(), gen_event()
-    host = get_event_by_name_qry.GetEventByNameResultHost(
-        **user.model_dump(include={"id", "name"})
-    )
+def test_get_event(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump()
 
     test_db_client.query_single.return_value = (
-        get_event_by_name_qry.GetEventByNameResult(
-            **event.model_dump(
-                include={"id", "name", "created_at", "address", "schedule"}
-            ),
-            host=host,
-        )
+        get_event_by_name_qry.GetEventByNameResult(**return_event_dict)
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -37,38 +28,21 @@ def test_get_event(gen_event, gen_user, test_db_client, test_client, events_url)
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == event.id
-    assert resp_json["name"] == event.name
-    assert resp_json["created_at"] == event.created_at.isoformat()
-    assert resp_json["address"] == event.address
-    assert resp_json["schedule"] == event.schedule.isoformat()
-    assert resp_json["host"]["id"] == user.id
-    assert resp_json["host"]["name"] == user.name
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["created_at"] == return_event_dict["created_at"].isoformat()
+    assert resp_json["address"] == return_event_dict["address"]
+    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
-def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url):
-    user1, user2 = gen_user(), gen_user()
+def test_get_events(gen_event, test_db_client, test_client, events_url):
     event1, event2 = gen_event(), gen_event()
-    host1 = get_events_qry.GetEventsResultHost(
-        **user1.model_dump(include={"id", "name"})
-    )
-    host2 = get_events_qry.GetEventsResultHost(
-        **user2.model_dump(include={"id", "name"})
-    )
+    return_event1_dict, return_event2_dict = event1.model_dump(), event2.model_dump()
 
     test_db_client.query.return_value = [
-        get_events_qry.GetEventsResult(
-            **event1.model_dump(
-                include={"id", "name", "created_at", "address", "schedule"}
-            ),
-            host=host1,
-        ),
-        get_events_qry.GetEventsResult(
-            **event2.model_dump(
-                include={"id", "name", "created_at", "address", "schedule"}
-            ),
-            host=host2,
-        ),
+        get_events_qry.GetEventsResult(**return_event1_dict),
+        get_events_qry.GetEventsResult(**return_event2_dict),
     ]
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -76,65 +50,139 @@ def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url
     first_event, second_event = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert first_event["id"] == event1.id
-    assert first_event["name"] == event1.name
-    assert first_event["created_at"] == event1.created_at.isoformat()
-    assert first_event["address"] == event1.address
-    assert first_event["schedule"] == event1.schedule.isoformat()
-    assert first_event["host"]["id"] == user1.id
-    assert first_event["host"]["name"] == user1.name
+    assert first_event["id"] == return_event1_dict["id"]
+    assert first_event["name"] == return_event1_dict["name"]
+    assert first_event["created_at"] == return_event1_dict["created_at"].isoformat()
+    assert first_event["address"] == return_event1_dict["address"]
+    assert first_event["schedule"] == return_event1_dict["schedule"].isoformat()
+    assert first_event["host_name"] == return_event1_dict["host_name"]
 
-    assert second_event["id"] == event2.id
-    assert second_event["name"] == event2.name
-    assert second_event["created_at"] == event2.created_at.isoformat()
-    assert second_event["address"] == event2.address
-    assert second_event["schedule"] == event2.schedule.isoformat()
-    assert second_event["host"]["id"] == user2.id
-    assert second_event["host"]["name"] == user2.name
+    assert second_event["id"] == return_event2_dict["id"]
+    assert second_event["name"] == return_event2_dict["name"]
+    assert second_event["created_at"] == return_event2_dict["created_at"].isoformat()
+    assert second_event["address"] == return_event2_dict["address"]
+    assert second_event["schedule"] == return_event2_dict["schedule"].isoformat()
+    assert second_event["host_name"] == return_event2_dict["host_name"]
 
 
-def test_post_event(gen_event, gen_user, test_db_client, test_client, events_url):
-    user, event = gen_user(), gen_event()
-    host = create_event_qry.CreateEventResultHost(
-        **user.model_dump(include={"id", "name"})
+def test_post_event1(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump(
+        include={"id", "name", "address", "schedule", "host_name"}
     )
 
     test_db_client.query_single.return_value = create_event_qry.CreateEventResult(
-        **event.model_dump(include={"id", "name", "address", "schedule"}),
-        host=host,
+        **return_event_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
     response = test_client.post(
         events_url,
         json={
-            **event.model_dump(include={"name", "address"}),
+            **event.model_dump(include={"name", "address", "host_name"}),
             "schedule": event.schedule.isoformat(),
-            "host_name": host.name,
         },
     )
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.CREATED
-    assert resp_json["id"] == event.id
-    assert resp_json["name"] == event.name
-    assert resp_json["address"] == event.address
-    assert resp_json["schedule"] == event.schedule.isoformat()
-    assert resp_json["host"]["id"] == user.id
-    assert resp_json["host"]["name"] == user.name
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["address"] == return_event_dict["address"]
+    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
-def test_put_event(gen_event, gen_user, test_db_client, test_client, events_url):
-    user, event = gen_user(), gen_event()
-    e_name_old, e_name_new = event.name, f"{event.name}_new"
-    host = update_event_qry.UpdateEventResultHost(
-        **user.model_dump(include={"id", "name"})
+def test_post_event2(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump(
+        include={"id", "name", "schedule", "host_name"}
     )
+    return_event_dict.update({"address": None})
+
+    test_db_client.query_single.return_value = create_event_qry.CreateEventResult(
+        **return_event_dict
+    )
+    t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
+
+    response = test_client.post(
+        events_url,
+        json={
+            **event.model_dump(include={"name", "host_name"}),
+            "schedule": event.schedule.isoformat(),
+        },
+    )
+    resp_json = response.json()
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["address"] is return_event_dict["address"]
+    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["host_name"] == return_event_dict["host_name"]
+
+
+def test_post_event3(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump(include={"id", "name", "address", "host_name"})
+    return_event_dict.update({"schedule": None})
+
+    test_db_client.query_single.return_value = create_event_qry.CreateEventResult(
+        **return_event_dict
+    )
+    t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
+
+    response = test_client.post(
+        events_url,
+        json={
+            **event.model_dump(include={"name", "address", "host_name"}),
+        },
+    )
+    resp_json = response.json()
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["address"] == return_event_dict["address"]
+    assert resp_json["schedule"] is return_event_dict["schedule"]
+    assert resp_json["host_name"] == return_event_dict["host_name"]
+
+
+def test_post_event4(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump(include={"id", "name", "host_name"})
+    return_event_dict.update({"address": None, "schedule": None})
+
+    test_db_client.query_single.return_value = create_event_qry.CreateEventResult(
+        **return_event_dict
+    )
+    t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
+
+    response = test_client.post(
+        events_url,
+        json={
+            **event.model_dump(include={"name", "host_name"}),
+        },
+    )
+    resp_json = response.json()
+
+    assert response.status_code == HTTPStatus.CREATED
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["address"] is return_event_dict["address"]
+    assert resp_json["schedule"] is return_event_dict["schedule"]
+    assert resp_json["host_name"] == return_event_dict["host_name"]
+
+
+def test_put_event(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    e_name_old, e_name_new = event.name, f"{event.name}_new"
+    return_event_dict = event.model_dump(
+        include={"id", "address", "schedule", "host_name"}
+    ) | {"name": e_name_new}
 
     test_db_client.query_single.return_value = update_event_qry.UpdateEventResult(
-        **event.model_dump(include={"id", "address", "schedule"}),
-        name=e_name_new,
-        host=host,
+        **return_event_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -145,29 +193,27 @@ def test_put_event(gen_event, gen_user, test_db_client, test_client, events_url)
             "new_name": e_name_new,
             "address": event.address,
             "schedule": event.schedule.isoformat(),
-            "host_name": host.name,
+            "host_name": event.host_name,
         },
     )
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == event.id
+    assert resp_json["id"] == return_event_dict["id"]
     assert resp_json["name"] == e_name_new
-    assert resp_json["address"] == event.address
-    assert resp_json["schedule"] == event.schedule.isoformat()
-    assert resp_json["host"]["id"] == user.id
-    assert resp_json["host"]["name"] == user.name
+    assert resp_json["address"] == return_event_dict["address"]
+    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
-def test_delete_event(gen_event, gen_user, test_db_client, test_client, events_url):
-    user, event = gen_user(), gen_event()
-    host = delete_event_qry.DeleteEventResultHost(
-        **user.model_dump(include={"id", "name"})
+def test_delete_event(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
+    return_event_dict = event.model_dump(
+        include={"id", "name", "address", "schedule", "host_name"}
     )
 
     test_db_client.query_single.return_value = delete_event_qry.DeleteEventResult(
-        **event.model_dump(include={"id", "name", "address", "schedule"}),
-        host=host,
+        **return_event_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -178,12 +224,11 @@ def test_delete_event(gen_event, gen_user, test_db_client, test_client, events_u
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == event.id
-    assert resp_json["name"] == event.name
-    assert resp_json["address"] == event.address
-    assert resp_json["schedule"] == event.schedule.isoformat()
-    assert resp_json["host"]["id"] == user.id
-    assert resp_json["host"]["name"] == user.name
+    assert resp_json["id"] == return_event_dict["id"]
+    assert resp_json["name"] == return_event_dict["name"]
+    assert resp_json["address"] == return_event_dict["address"]
+    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
 ################################
@@ -204,10 +249,8 @@ def test_get_event_not_found(gen_event, test_db_client, test_client, events_url)
     assert resp_json["detail"]["error"] == f"Event '{event.name}' does not exist."
 
 
-def test_post_event_bad_request1(
-    gen_event, gen_user, test_db_client, test_client, events_url
-):
-    user, event = gen_user(), gen_event()
+def test_post_event_bad_request1(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
 
     test_db_client.query_single.side_effect = edgedb.errors.InvalidArgumentError
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
@@ -215,9 +258,8 @@ def test_post_event_bad_request1(
     response = test_client.post(
         events_url,
         json={
-            **event.model_dump(include={"name", "address"}),
+            **event.model_dump(include={"name", "address", "host_name"}),
             "schedule": event.schedule.isoformat(),
-            "host_name": user.name,
         },
     )
     resp_json = response.json()
@@ -226,10 +268,8 @@ def test_post_event_bad_request1(
     assert "Invalid datetime format" in resp_json["detail"]["error"]
 
 
-def test_post_event_bad_request2(
-    gen_event, gen_user, test_db_client, test_client, events_url
-):
-    user, event = gen_user(), gen_event()
+def test_post_event_bad_request2(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
@@ -237,9 +277,8 @@ def test_post_event_bad_request2(
     response = test_client.post(
         events_url,
         json={
-            **event.model_dump(include={"name", "address"}),
+            **event.model_dump(include={"name", "address", "host_name"}),
             "schedule": event.schedule.isoformat(),
-            "host_name": user.name,
         },
     )
     resp_json = response.json()
@@ -248,10 +287,8 @@ def test_post_event_bad_request2(
     assert resp_json["detail"]["error"] == f"Event name '{event.name}' already exists."
 
 
-def test_put_event_bad_request1(
-    gen_event, gen_user, test_db_client, test_client, events_url
-):
-    user, event = gen_user(), gen_event()
+def test_put_event_bad_request1(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
 
     test_db_client.query_single.side_effect = edgedb.errors.InvalidArgumentError
@@ -264,7 +301,7 @@ def test_put_event_bad_request1(
             "new_name": e_name_new,
             "address": event.address,
             "schedule": event.schedule.isoformat(),
-            "host_name": user.name,
+            "host_name": event.host_name,
         },
     )
     resp_json = response.json()
@@ -273,10 +310,8 @@ def test_put_event_bad_request1(
     assert "Invalid datetime format" in resp_json["detail"]["error"]
 
 
-def test_put_event_bad_request2(
-    gen_event, gen_user, test_db_client, test_client, events_url
-):
-    user, event = gen_user(), gen_event()
+def test_put_event_bad_request2(gen_event, test_db_client, test_client, events_url):
+    event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
@@ -289,7 +324,7 @@ def test_put_event_bad_request2(
             "new_name": e_name_new,
             "address": event.address,
             "schedule": event.schedule.isoformat(),
-            "host_name": user.name,
+            "host_name": event.host_name,
         },
     )
     resp_json = response.json()
@@ -299,9 +334,9 @@ def test_put_event_bad_request2(
 
 
 def test_put_event_internal_server_error(
-    gen_event, gen_user, test_db_client, test_client, events_url
+    gen_event, test_db_client, test_client, events_url
 ):
-    user, event = gen_user(), gen_event()
+    event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
 
     test_db_client.query_single.return_value = None
@@ -314,7 +349,7 @@ def test_put_event_internal_server_error(
             "new_name": e_name_new,
             "address": event.address,
             "schedule": event.schedule.isoformat(),
-            "host_name": user.name,
+            "host_name": event.host_name,
         },
     )
     resp_json = response.json()

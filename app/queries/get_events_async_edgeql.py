@@ -32,13 +32,7 @@ class GetEventsResult(NoPydanticValidation):
     created_at: datetime.datetime
     address: str | None
     schedule: datetime.datetime | None
-    host: GetEventsResultHost
-
-
-@dataclasses.dataclass
-class GetEventsResultHost(NoPydanticValidation):
-    id: uuid.UUID
-    name: str
+    host_name: str
 
 
 async def get_events(
@@ -46,6 +40,6 @@ async def get_events(
 ) -> list[GetEventsResult]:
     return await executor.query(
         """\
-        select Event {name, created_at, address, schedule, host : {name}};\
+        select Event {name, created_at, address, schedule, host_name:=.host.name};\
         """,
     )

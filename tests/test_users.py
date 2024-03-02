@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from http import HTTPStatus
 
 import edgedb
@@ -19,9 +17,10 @@ from .lifespan import t_lifespan
 ################################
 def test_get_user(gen_user_with_n_event, test_db_client, test_client, users_url):
     user = gen_user_with_n_event()
+    return_user_dict = user.model_dump()
 
     test_db_client.query_single.return_value = get_user_by_name_qry.GetUserByNameResult(
-        **user.model_dump()
+        **return_user_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -29,21 +28,18 @@ def test_get_user(gen_user_with_n_event, test_db_client, test_client, users_url)
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == user.id
-    assert resp_json["name"] == user.name
-    assert resp_json["created_at"] == user.created_at.isoformat()
+    assert resp_json["id"] == return_user_dict["id"]
+    assert resp_json["name"] == return_user_dict["name"]
+    assert resp_json["created_at"] == return_user_dict["created_at"].isoformat()
 
 
 def test_get_users(gen_user_with_n_event, test_db_client, test_client, users_url):
     user1, user2 = gen_user_with_n_event(), gen_user_with_n_event()
+    return_user_dict1, return_user_dict2 = user1.model_dump(), user2.model_dump()
 
     test_db_client.query.return_value = [
-        get_users_qry.GetUsersResult(
-            **user1.model_dump(include={"id", "name", "created_at", "n_events"})
-        ),
-        get_users_qry.GetUsersResult(
-            **user2.model_dump(include={"id", "name", "created_at", "n_events"})
-        ),
+        get_users_qry.GetUsersResult(**return_user_dict1),
+        get_users_qry.GetUsersResult(**return_user_dict2),
     ]
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -51,20 +47,21 @@ def test_get_users(gen_user_with_n_event, test_db_client, test_client, users_url
     first_user, second_user = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert first_user["id"] == user1.id
-    assert first_user["name"] == user1.name
-    assert first_user["created_at"] == user1.created_at.isoformat()
+    assert first_user["id"] == return_user_dict1["id"]
+    assert first_user["name"] == return_user_dict1["name"]
+    assert first_user["created_at"] == return_user_dict1["created_at"].isoformat()
 
-    assert second_user["id"] == user2.id
-    assert second_user["name"] == user2.name
-    assert second_user["created_at"] == user2.created_at.isoformat()
+    assert second_user["id"] == return_user_dict2["id"]
+    assert second_user["name"] == return_user_dict2["name"]
+    assert second_user["created_at"] == return_user_dict2["created_at"].isoformat()
 
 
 def test_post_user(gen_user, test_db_client, test_client, users_url):
     user = gen_user()
+    return_user_dict = user.model_dump()
 
     test_db_client.query_single.return_value = create_user_qry.CreateUserResult(
-        **user.model_dump()
+        **return_user_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -72,17 +69,20 @@ def test_post_user(gen_user, test_db_client, test_client, users_url):
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.CREATED
-    assert resp_json["id"] == user.id
-    assert resp_json["name"] == user.name
-    assert resp_json["created_at"] == user.created_at.isoformat()
+    assert resp_json["id"] == return_user_dict["id"]
+    assert resp_json["name"] == return_user_dict["name"]
+    assert resp_json["created_at"] == return_user_dict["created_at"].isoformat()
 
 
 def test_put_user(gen_user, test_db_client, test_client, users_url):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
+    return_user_dict = user.model_dump(include={"id", "created_at"}) | {
+        "name": u_name_new
+    }
 
     test_db_client.query_single.return_value = update_users_qry.UpdateUserResult(
-        **user.model_dump(include={"id", "created_at"}), name=u_name_new
+        **return_user_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -92,16 +92,17 @@ def test_put_user(gen_user, test_db_client, test_client, users_url):
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == user.id
+    assert resp_json["id"] == return_user_dict["id"]
     assert resp_json["name"] == u_name_new
-    assert resp_json["created_at"] == user.created_at.isoformat()
+    assert resp_json["created_at"] == return_user_dict["created_at"].isoformat()
 
 
 def test_delete_user(gen_user, test_db_client, test_client, users_url):
     user = gen_user()
+    return_user_dict = user.model_dump()
 
     test_db_client.query_single.return_value = delete_user_qry.DeleteUserResult(
-        **user.model_dump()
+        **return_user_dict
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
@@ -109,9 +110,9 @@ def test_delete_user(gen_user, test_db_client, test_client, users_url):
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
-    assert resp_json["id"] == user.id
-    assert resp_json["name"] == user.name
-    assert resp_json["created_at"] == user.created_at.isoformat()
+    assert resp_json["id"] == return_user_dict["id"]
+    assert resp_json["name"] == return_user_dict["name"]
+    assert resp_json["created_at"] == return_user_dict["created_at"].isoformat()
 
 
 ################################

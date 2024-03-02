@@ -31,13 +31,7 @@ class DeleteEventResult(NoPydanticValidation):
     name: str
     address: str | None
     schedule: datetime.datetime | None
-    host: DeleteEventResultHost
-
-
-@dataclasses.dataclass
-class DeleteEventResultHost(NoPydanticValidation):
-    id: uuid.UUID
-    name: str
+    host_name: str
 
 
 async def delete_event(
@@ -49,7 +43,7 @@ async def delete_event(
         """\
         select (
             delete Event filter .name = <str>$name
-        ) {name, address, schedule, host : {name}};\
+        ) {name, address, schedule, host_name:=.host.name};\
         """,
         name=name,
     )
