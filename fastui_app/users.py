@@ -8,9 +8,12 @@ from fastui import components as c
 from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import BackEvent, GoToEvent, PageEvent
 from fastui.forms import SelectSearchResponse, fastui_form
-from httpx import AsyncClient
 
-from .clients import PostPutDeleteAsyncClient
+from .clients import (  # noqa: F401
+    BackendAsyncClient,
+    FrontendGetAsyncClient,
+    FrontendPostPutDeleteAsyncClient,
+)
 from .forms import UserCreationForm, UserUpdateForm
 from .shared import demo_page
 from .utils import _form_user_repr, _raise_for_status
@@ -23,7 +26,7 @@ router = APIRouter(include_in_schema=False)
 async def user_ilike_searchview(
     services: svcs.fastapi.DepContainer, name: str | None = None
 ):
-    client = await services.aget(AsyncClient)
+    client = await services.aget(BackendAsyncClient)
     resp = await client.get("/users/search", params={"name": name})
     usernames = resp.json()
     options = [{"label": name, "value": name} for name in usernames]
@@ -39,9 +42,8 @@ async def user_createview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[UserCreationForm, fastui_form(UserCreationForm)],
 ):
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
-    resp = await client.post("/users", json=form.model_dump(), **extra_headers)
-
+    client = await services.aget(BackendAsyncClient)
+    resp = await client.post("/users", json=form.model_dump())
     # raised, but how to do a full page reload?
     # resp_json = _raise_for_status(resp, HTTPStatus.CREATED)
 
@@ -62,7 +64,7 @@ async def user_createview(
 async def user_detailview(
     services: svcs.fastapi.DepContainer, name: str
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
+    client = await services.aget(BackendAsyncClient)
     resp = await client.get("/users", params={"name": name})
     resp_json = _raise_for_status(resp)  # try using prebuilt_html
     user = _form_user_repr(resp_json)
@@ -88,7 +90,9 @@ async def user_detailview(
                     submit_url=f"/api/users/{name}/update/",
                     loading=[c.Spinner(text="Updating...")],
                     footer=[],
-                    submit_trigger=PageEvent(name="modal-form-update-user-submit"),
+                    submit_trigger=PageEvent(
+                        name="modal-form-update-user-submit",
+                    ),
                 ),
             ],
             footer=[
@@ -150,9 +154,9 @@ async def user_updateview(
     form: Annotated[UserUpdateForm, fastui_form(UserUpdateForm)],
     name: str,
 ) -> list[AnyComponent]:
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    client = await services.aget(BackendAsyncClient)
     form_dict = {"name": name} | form.model_dump()
-    resp = await client.put("/users", json=form_dict, **extra_headers)
+    resp = await client.put("/users", json=form_dict)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -171,8 +175,8 @@ async def user_deleteview(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
-    resp = await client.delete("/users", params={"name": name}, **extra_headers)
+    client = await services.aget(BackendAsyncClient)
+    resp = await client.delete("/users", params={"name": name})
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -192,7 +196,7 @@ async def user_listview(
     Show a table of four users, `/api` is the endpoint the frontend will connect to
     when a user visits `/` to fetch components to render.
     """
-    client = await services.aget(AsyncClient)
+    client = await services.aget(BackendAsyncClient)
     resp = await client.get("/users")
     resp_json_list = _raise_for_status(resp, HTTPStatus.OK)
     users = [_form_user_repr(resp_json) for resp_json in resp_json_list]

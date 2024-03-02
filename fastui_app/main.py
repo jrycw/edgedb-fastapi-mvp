@@ -5,9 +5,11 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+# from starlette_csrf import CSRFMiddleware
+
 sys.path.append(os.getcwd())
 
-from fastui_app import common, events, users
+from fastui_app import common, events, users  # noqa: F401
 from fastui_app.config import settings
 from fastui_app.lifespan import lifespan
 
@@ -22,6 +24,8 @@ def make_app(lifespan):
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # app.add_middleware(CSRFMiddleware, secret=settings.secret_csrf)
 
     # order matters
     app.include_router(users.router)

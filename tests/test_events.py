@@ -93,9 +93,7 @@ def test_get_events(gen_event, gen_user, test_db_client, test_client, events_url
     assert second_event["host"]["name"] == user2.name
 
 
-def test_post_event(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
-):
+def test_post_event(gen_event, gen_user, test_db_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     host = create_event_qry.CreateEventResultHost(
         **user.model_dump(include={"id", "name"})
@@ -114,7 +112,6 @@ def test_post_event(
             "schedule": event.schedule.isoformat(),
             "host_name": host.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -127,9 +124,7 @@ def test_post_event(
     assert resp_json["host"]["name"] == user.name
 
 
-def test_put_event(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
-):
+def test_put_event(gen_event, gen_user, test_db_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
     host = update_event_qry.UpdateEventResultHost(
@@ -152,7 +147,6 @@ def test_put_event(
             "schedule": event.schedule.isoformat(),
             "host_name": host.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -165,9 +159,7 @@ def test_put_event(
     assert resp_json["host"]["name"] == user.name
 
 
-def test_delete_event(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
-):
+def test_delete_event(gen_event, gen_user, test_db_client, test_client, events_url):
     user, event = gen_user(), gen_event()
     host = delete_event_qry.DeleteEventResultHost(
         **user.model_dump(include={"id", "name"})
@@ -182,7 +174,6 @@ def test_delete_event(
     response = test_client.delete(
         events_url,
         params={"name": event.name},
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -214,7 +205,7 @@ def test_get_event_not_found(gen_event, test_db_client, test_client, events_url)
 
 
 def test_post_event_bad_request1(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
+    gen_event, gen_user, test_db_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
 
@@ -228,7 +219,6 @@ def test_post_event_bad_request1(
             "schedule": event.schedule.isoformat(),
             "host_name": user.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -237,7 +227,7 @@ def test_post_event_bad_request1(
 
 
 def test_post_event_bad_request2(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
+    gen_event, gen_user, test_db_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
 
@@ -251,7 +241,6 @@ def test_post_event_bad_request2(
             "schedule": event.schedule.isoformat(),
             "host_name": user.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -260,7 +249,7 @@ def test_post_event_bad_request2(
 
 
 def test_put_event_bad_request1(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
+    gen_event, gen_user, test_db_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
@@ -277,7 +266,6 @@ def test_put_event_bad_request1(
             "schedule": event.schedule.isoformat(),
             "host_name": user.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -286,7 +274,7 @@ def test_put_event_bad_request1(
 
 
 def test_put_event_bad_request2(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
+    gen_event, gen_user, test_db_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
@@ -303,7 +291,6 @@ def test_put_event_bad_request2(
             "schedule": event.schedule.isoformat(),
             "host_name": user.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -312,7 +299,7 @@ def test_put_event_bad_request2(
 
 
 def test_put_event_internal_server_error(
-    gen_event, gen_user, test_db_client, test_client, events_url, extra_headers
+    gen_event, gen_user, test_db_client, test_client, events_url
 ):
     user, event = gen_user(), gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
@@ -329,7 +316,6 @@ def test_put_event_internal_server_error(
             "schedule": event.schedule.isoformat(),
             "host_name": user.name,
         },
-        **extra_headers,
     )
     resp_json = response.json()
 
@@ -338,7 +324,7 @@ def test_put_event_internal_server_error(
 
 
 def test_delete_event_internal_server_error(
-    gen_event, test_db_client, test_client, events_url, extra_headers
+    gen_event, test_db_client, test_client, events_url
 ):
     event = gen_event()
 
@@ -348,7 +334,6 @@ def test_delete_event_internal_server_error(
     response = test_client.delete(
         events_url,
         params={"name": event.name},
-        **extra_headers,
     )
     resp_json = response.json()
 

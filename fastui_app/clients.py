@@ -1,5 +1,13 @@
 from httpx import AsyncClient
 
 
-class PostPutDeleteAsyncClient(AsyncClient):
+class FrontendGetAsyncClient(AsyncClient):
+    pass
+
+
+class FrontendPostPutDeleteAsyncClient(AsyncClient):
+    pass
+
+
+class BackendAsyncClient(AsyncClient):
     pass

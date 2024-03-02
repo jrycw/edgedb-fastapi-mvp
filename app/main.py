@@ -4,7 +4,6 @@ import sys
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
-from starlette_csrf import CSRFMiddleware
 
 sys.path.append(os.getcwd())
 
@@ -26,8 +25,6 @@ def make_app(lifespan):
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
-    app.add_middleware(CSRFMiddleware, secret=settings.secret_csrf)
 
     app.include_router(users.router)
     app.include_router(events.router)

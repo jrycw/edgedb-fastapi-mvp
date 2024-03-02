@@ -1,30 +1,55 @@
 import svcs
 from fastapi import FastAPI
-from httpx import AsyncClient
 
-from .clients import PostPutDeleteAsyncClient
+from .clients import (
+    BackendAsyncClient,
+    FrontendGetAsyncClient,
+    FrontendPostPutDeleteAsyncClient,
+)
 from .config import settings
-from .utils import create_post_put_delete_web_client
 
 
 async def _lifespan(app: FastAPI, registry: svcs.Registry):
-    # Web client(connect to backend)
-    base_url = (
-        f"{settings.backendschema}://{settings.backendhost}:{settings.backendport}"
-    )
-    client = AsyncClient(base_url=base_url)
-
-    async def setup_httpx_client():
-        """only 1 web client for GET"""
-        yield client
-
-    registry.register_factory(
-        AsyncClient,
-        setup_httpx_client,
+    backend_client = BackendAsyncClient(
+        base_url=f"{settings.backendschema}://{settings.backendhost}:{settings.backendport}"
     )
 
+    async def creat_backend_client():
+        """1 backend web client"""
+        yield backend_client
+
     registry.register_factory(
-        PostPutDeleteAsyncClient, create_post_put_delete_web_client
+        BackendAsyncClient,
+        creat_backend_client,
+    )
+
+    front_get_client = BackendAsyncClient(
+        base_url=f"{settings.frontendschema}://{settings.frontendhost}:{settings.frontendport}"
+    )
+
+    async def create_frontend_get_client():
+        """1 frontent web GET client"""
+        yield front_get_client
+
+    registry.register_factory(
+        FrontendGetAsyncClient,
+        create_frontend_get_client,
+    )
+
+    async def create_frontend_post_put_delete_client():
+        """For every post/put/delete, we request 1 specialized web client"""
+        base_url = f"{settings.frontendschema}://{settings.frontendhost}:{settings.frontendport}"
+        async with FrontendPostPutDeleteAsyncClient(base_url=base_url) as client:
+            csrftoken = (await client.get("/")).cookies.get("csrftoken")
+            # extra_headers = (
+            #     {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
+            # )
+            csrftoken_dict = {"x-csrftoken": csrftoken} if csrftoken is not None else {}
+            yield client, csrftoken_dict
+
+    registry.register_factory(
+        FrontendPostPutDeleteAsyncClient,
+        create_frontend_post_put_delete_client,
     )
 
     yield

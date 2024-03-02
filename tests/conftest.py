@@ -53,16 +53,6 @@ def test_client(test_app):
         yield client
 
 
-@pytest.fixture(scope="function")
-def csrftoken(test_client):
-    yield (test_client.get("/")).cookies.get("csrftoken")
-
-
-@pytest.fixture(scope="function")
-def extra_headers(csrftoken):
-    yield {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
-
-
 @pytest.fixture
 def test_db_client():
     yield Mock(spec_set=AsyncIOClient)

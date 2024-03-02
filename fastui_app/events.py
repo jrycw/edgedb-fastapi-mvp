@@ -8,9 +8,12 @@ from fastui import components as c
 from fastui.components.display import DisplayLookup, DisplayMode
 from fastui.events import BackEvent, GoToEvent, PageEvent
 from fastui.forms import fastui_form
-from httpx import AsyncClient
 
-from .clients import PostPutDeleteAsyncClient
+from .clients import (  # noqa: F401
+    BackendAsyncClient,
+    FrontendGetAsyncClient,
+    FrontendPostPutDeleteAsyncClient,
+)
 from .forms import EventCreationForm, EventUpdateForm
 from .shared import demo_page
 from .utils import _form_event_repr, _raise_for_status
@@ -27,11 +30,11 @@ async def event_createview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[EventCreationForm, fastui_form(EventCreationForm)],
 ):
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    client = await services.aget(BackendAsyncClient)
     form_dict = form.model_dump()
     if s := form_dict["schedule"]:
         form_dict.update(schedule=s.isoformat())
-    resp = await client.post("/events", json=form_dict, **extra_headers)
+    resp = await client.post("/events", json=form_dict)
     if resp.status_code != HTTPStatus.CREATED:
         resp_json = resp.json()
         return [
@@ -50,7 +53,7 @@ async def event_createview(
 async def event_detailview(
     services: svcs.fastapi.DepContainer, name: str
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
+    client = await services.aget(BackendAsyncClient)
     resp = await client.get("/events", params={"name": name})
     resp_json = _raise_for_status(resp)  # try using prebuilt_html
     event = _form_event_repr(resp_json)
@@ -139,11 +142,11 @@ async def event_updateview(
     form: Annotated[EventUpdateForm, fastui_form(EventUpdateForm)],
     name: str,
 ) -> list[AnyComponent]:
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    client = await services.aget(BackendAsyncClient)
     form_dict = {"name": name} | form.model_dump()
     if s := form_dict["schedule"]:
         form_dict.update(schedule=s.isoformat())
-    resp = await client.put("/events", json=form_dict, **extra_headers)
+    resp = await client.put("/events", json=form_dict)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -164,8 +167,8 @@ async def event_deleteview(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
-    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
-    resp = await client.delete("/events", params={"name": name}, **extra_headers)
+    client = await services.aget(BackendAsyncClient)
+    resp = await client.delete("/events", params={"name": name})
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -181,7 +184,7 @@ async def event_deleteview(
 async def event_listview(
     services: svcs.fastapi.DepContainer,
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
+    client = await services.aget(BackendAsyncClient)
     resp = await client.get("/events")
     resp_json_list = _raise_for_status(resp, HTTPStatus.OK)
     events = [_form_event_repr(resp_json) for resp_json in resp_json_list]
