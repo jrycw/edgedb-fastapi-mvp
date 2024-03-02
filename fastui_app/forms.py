@@ -28,7 +28,7 @@ A:
 user_prefer_zoneinfo = ZoneInfo(settings.tz)
 
 
-class DisplayAuditable:
+class _DisplayAuditable:
     @field_validator("created_at")
     @classmethod
     def validate_created_at(cls, v: datetime.datetime) -> datetime.datetime:
@@ -36,11 +36,7 @@ class DisplayAuditable:
         return v.astimezone(user_prefer_zoneinfo).replace(microsecond=0)
 
 
-class UserRepr(UserFull, DisplayAuditable):
-    pass
-
-
-class EventRepr(EventFull, DisplayAuditable):
+class _DisplaySchedule:
     @field_validator("schedule")
     @classmethod
     def validate_schedule(cls, v: str | None) -> str | None:
@@ -52,6 +48,14 @@ class EventRepr(EventFull, DisplayAuditable):
                 .isoformat()
             )
         return v
+
+
+class UserRepr(UserFull, _DisplayAuditable):
+    pass
+
+
+class EventRepr(EventFull, _DisplaySchedule, _DisplayAuditable):
+    pass
 
 
 ################################

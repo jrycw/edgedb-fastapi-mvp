@@ -35,6 +35,9 @@ jobs:
           run: |
             . .venv/bin/activate
             echo PATH=$PATH >> $GITHUB_ENV
-  
+
+        - name: Set env
+          run: echo "secret_csrf=$(openssl rand -hex 32)" >> $GITHUB_ENV
+
         - name: Test with pytest
           run: pytest

@@ -33,9 +33,9 @@ async def search_users_ilike(
     services: svcs.fastapi.DepContainer,
     name: Annotated[str | None, Query(max_length=50)] = None,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     return await search_users_by_name_ilike_qry.search_users_by_name_ilike(
-        client, name=name
+        db_client, name=name
     )
 
 
@@ -54,11 +54,11 @@ async def get_users(
     services: svcs.fastapi.DepContainer,
     name: Annotated[str | None, Query(max_length=50)] = None,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     if name is None:
-        return await get_users_qry.get_users(client)
+        return await get_users_qry.get_users(db_client)
     else:
-        if user := await get_user_by_name_qry.get_user_by_name(client, name=name):
+        if user := await get_user_by_name_qry.get_user_by_name(db_client, name=name):
             return user
 
     raise HTTPException(
@@ -79,9 +79,9 @@ async def get_users(
     tags=["users"],
 )
 async def post_user(services: svcs.fastapi.DepContainer, user: UserCreate):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     try:
-        created_user = await create_user_qry.create_user(client, **user.model_dump())
+        created_user = await create_user_qry.create_user(db_client, **user.model_dump())
     except edgedb.errors.ConstraintViolationError:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -105,9 +105,9 @@ async def put_user(
     services: svcs.fastapi.DepContainer,
     user: UserUpdate,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     try:
-        updated_user = await update_user_qry.update_user(client, **user.model_dump())
+        updated_user = await update_user_qry.update_user(db_client, **user.model_dump())
     except edgedb.errors.ConstraintViolationError:
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -136,10 +136,10 @@ async def put_user(
 async def delete_user(
     services: svcs.fastapi.DepContainer, name: Annotated[str, Query(max_length=50)]
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     try:
         deleted_user = await delete_user_qry.delete_user(
-            client,
+            db_client,
             name=name,
         )
     except edgedb.errors.ConstraintViolationError:

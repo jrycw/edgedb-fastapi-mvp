@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     backendreload: bool = False
 
     tz: str = "UTC"
+    secret_csrf: str
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -10,6 +10,7 @@ from fastui.events import BackEvent, GoToEvent, PageEvent
 from fastui.forms import fastui_form
 from httpx import AsyncClient
 
+from .clients import PostPutDeleteAsyncClient
 from .forms import EventCreationForm, EventUpdateForm
 from .shared import demo_page
 from .utils import _form_event_repr, _raise_for_status
@@ -26,11 +27,11 @@ async def event_createview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[EventCreationForm, fastui_form(EventCreationForm)],
 ):
-    client = await services.aget(AsyncClient)
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
     form_dict = form.model_dump()
     if s := form_dict["schedule"]:
         form_dict.update(schedule=s.isoformat())
-    resp = await client.post("/events", json=form_dict)
+    resp = await client.post("/events", json=form_dict, **extra_headers)
     if resp.status_code != HTTPStatus.CREATED:
         resp_json = resp.json()
         return [
@@ -138,11 +139,11 @@ async def event_updateview(
     form: Annotated[EventUpdateForm, fastui_form(EventUpdateForm)],
     name: str,
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
     form_dict = {"name": name} | form.model_dump()
     if s := form_dict["schedule"]:
         form_dict.update(schedule=s.isoformat())
-    resp = await client.put("/events", json=form_dict)
+    resp = await client.put("/events", json=form_dict, **extra_headers)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -163,8 +164,8 @@ async def event_deleteview(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
-    resp = await client.delete("/events", params={"name": name})
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    resp = await client.delete("/events", params={"name": name}, **extra_headers)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [

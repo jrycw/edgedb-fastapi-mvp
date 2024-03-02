@@ -31,11 +31,11 @@ async def get_events(
     services: svcs.fastapi.DepContainer,
     name: Annotated[str | None, Query(max_length=50)] = None,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     if name is None:
-        return await get_events_qry.get_events(client)
+        return await get_events_qry.get_events(db_client)
     else:
-        if event := await get_event_by_name_qry.get_event_by_name(client, name=name):
+        if event := await get_event_by_name_qry.get_event_by_name(db_client, name=name):
             return event
 
     raise HTTPException(
@@ -59,10 +59,10 @@ async def post_event(
     services: svcs.fastapi.DepContainer,
     event: EventCreate,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     try:
         created_event = await create_event_qry.create_event(
-            client, **event.model_dump()
+            db_client, **event.model_dump()
         )
     except edgedb.errors.InvalidArgumentError:
         raise HTTPException(
@@ -96,10 +96,10 @@ async def put_event(
     services: svcs.fastapi.DepContainer,
     event: EventUpdate,
 ):
-    client = await services.aget(AsyncIOClient)
+    db_client = await services.aget(AsyncIOClient)
     try:
         updated_event = await update_event_qry.update_event(
-            client, **event.model_dump()
+            db_client, **event.model_dump()
         )
     except edgedb.errors.InvalidArgumentError:
         raise HTTPException(
@@ -137,8 +137,8 @@ async def delete_event(
     services: svcs.fastapi.DepContainer,
     name: Annotated[str, Query(max_length=50)],
 ):
-    client = await services.aget(AsyncIOClient)
-    if deleted_event := await delete_event_qry.delete_event(client, name=name):
+    db_client = await services.aget(AsyncIOClient)
+    if deleted_event := await delete_event_qry.delete_event(db_client, name=name):
         return deleted_event
 
     raise HTTPException(

@@ -11,3 +11,4 @@ pydantic-settings
 fastui
 python-multipart
 tzdata 
+starlette-csrf

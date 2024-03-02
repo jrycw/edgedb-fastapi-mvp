@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 sys.path.append(os.getcwd())
+
 from fastui_app import common, events, users
 from fastui_app.config import settings
 from fastui_app.lifespan import lifespan

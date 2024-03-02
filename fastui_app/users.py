@@ -10,6 +10,7 @@ from fastui.events import BackEvent, GoToEvent, PageEvent
 from fastui.forms import SelectSearchResponse, fastui_form
 from httpx import AsyncClient
 
+from .clients import PostPutDeleteAsyncClient
 from .forms import UserCreationForm, UserUpdateForm
 from .shared import demo_page
 from .utils import _form_user_repr, _raise_for_status
@@ -17,6 +18,7 @@ from .utils import _form_user_repr, _raise_for_status
 router = APIRouter(include_in_schema=False)
 
 
+# TODO: Not ready
 @router.get("/api/users/search", response_model=SelectSearchResponse)
 async def user_ilike_searchview(
     services: svcs.fastapi.DepContainer, name: str | None = None
@@ -37,8 +39,8 @@ async def user_createview(
     services: svcs.fastapi.DepContainer,
     form: Annotated[UserCreationForm, fastui_form(UserCreationForm)],
 ):
-    client = await services.aget(AsyncClient)
-    resp = await client.post("/users", json=form.model_dump())
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    resp = await client.post("/users", json=form.model_dump(), **extra_headers)
 
     # raised, but how to do a full page reload?
     # resp_json = _raise_for_status(resp, HTTPStatus.CREATED)
@@ -148,9 +150,9 @@ async def user_updateview(
     form: Annotated[UserUpdateForm, fastui_form(UserUpdateForm)],
     name: str,
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
     form_dict = {"name": name} | form.model_dump()
-    resp = await client.put("/users", json=form_dict)
+    resp = await client.put("/users", json=form_dict, **extra_headers)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [
@@ -169,8 +171,8 @@ async def user_deleteview(
     services: svcs.fastapi.DepContainer,
     name: str,
 ) -> list[AnyComponent]:
-    client = await services.aget(AsyncClient)
-    resp = await client.delete("/users", params={"name": name})
+    client, extra_headers = await services.aget(PostPutDeleteAsyncClient)
+    resp = await client.delete("/users", params={"name": name}, **extra_headers)
     if resp.status_code != HTTPStatus.OK:
         resp_json = resp.json()
         return [

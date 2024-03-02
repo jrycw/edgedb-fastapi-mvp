@@ -2,8 +2,30 @@ from http import HTTPStatus
 
 from fastapi import HTTPException
 from fastapi.responses import Response
+from httpx import AsyncClient
 
+from .config import settings
 from .forms import EventRepr, UserRepr
+
+
+async def create_get_web_client():
+    base_url = (
+        f"{settings.backendschema}://{settings.backendhost}:{settings.backendport}"
+    )
+    async with AsyncClient(base_url=base_url) as client:
+        yield client
+
+
+async def create_post_put_delete_web_client():
+    base_url = (
+        f"{settings.backendschema}://{settings.backendhost}:{settings.backendport}"
+    )
+    async with AsyncClient(base_url=base_url) as client:
+        csrftoken = (await client.get("/")).cookies.get("csrftoken")
+        extra_headers = (
+            {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
+        )
+        yield client, extra_headers
 
 
 def _raise_for_status(response: Response, status_code: HTTPStatus = HTTPStatus.OK):

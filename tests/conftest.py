@@ -12,47 +12,55 @@ from .factories import TestEventData, TestUserData, TestUserDataWithnEvents
 from .lifespan import t_lifespan
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def users_url():
     yield "users"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def events_url():
     yield "events"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def health_url():
     yield "healthy"
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gen_user():
     return lambda: TestUserData()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gen_user_with_n_event():
     return lambda: TestUserDataWithnEvents()
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def gen_event():
     return lambda: TestEventData()
 
 
 @pytest.fixture(scope="session", autouse=True)
 def test_app():
-    """request 1 app(1 EdgeDB client) is enough per session"""
     yield make_app(t_lifespan)
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def test_client(test_app):
-    """request 1 web client is enough per session"""
     with TestClient(test_app) as client:
         yield client
+
+
+@pytest.fixture(scope="function")
+def csrftoken(test_client):
+    yield (test_client.get("/")).cookies.get("csrftoken")
+
+
+@pytest.fixture(scope="function")
+def extra_headers(csrftoken):
+    yield {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
 
 
 @pytest.fixture

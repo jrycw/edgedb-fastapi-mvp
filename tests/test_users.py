@@ -60,7 +60,7 @@ def test_get_users(gen_user_with_n_event, test_db_client, test_client, users_url
     assert second_user["created_at"] == user2.created_at.isoformat()
 
 
-def test_post_user(gen_user, test_db_client, test_client, users_url):
+def test_post_user(gen_user, test_db_client, test_client, users_url, extra_headers):
     user = gen_user()
 
     test_db_client.query_single.return_value = create_user_qry.CreateUserResult(
@@ -68,7 +68,7 @@ def test_post_user(gen_user, test_db_client, test_client, users_url):
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
-    response = test_client.post(users_url, json={"name": user.name})
+    response = test_client.post(users_url, json={"name": user.name}, **extra_headers)
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.CREATED
@@ -77,7 +77,7 @@ def test_post_user(gen_user, test_db_client, test_client, users_url):
     assert resp_json["created_at"] == user.created_at.isoformat()
 
 
-def test_put_user(gen_user, test_db_client, test_client, users_url):
+def test_put_user(gen_user, test_db_client, test_client, users_url, extra_headers):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
 
@@ -87,8 +87,7 @@ def test_put_user(gen_user, test_db_client, test_client, users_url):
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
     response = test_client.put(
-        users_url,
-        json={"name": u_name_old, "new_name": u_name_new},
+        users_url, json={"name": u_name_old, "new_name": u_name_new}, **extra_headers
     )
     resp_json = response.json()
 
@@ -98,7 +97,7 @@ def test_put_user(gen_user, test_db_client, test_client, users_url):
     assert resp_json["created_at"] == user.created_at.isoformat()
 
 
-def test_delete_user(gen_user, test_db_client, test_client, users_url):
+def test_delete_user(gen_user, test_db_client, test_client, users_url, extra_headers):
     user = gen_user()
 
     test_db_client.query_single.return_value = delete_user_qry.DeleteUserResult(
@@ -106,7 +105,9 @@ def test_delete_user(gen_user, test_db_client, test_client, users_url):
     )
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
-    response = test_client.delete(users_url, params={"name": user.name})
+    response = test_client.delete(
+        users_url, params={"name": user.name}, **extra_headers
+    )
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.OK
@@ -131,20 +132,24 @@ def test_get_user_not_found(gen_user, test_db_client, test_client, users_url):
     assert resp_json["detail"]["error"] == f"Username '{user.name}' does not exist."
 
 
-def test_post_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_post_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, extra_headers
+):
     user = gen_user()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
-    response = test_client.post(users_url, json={"name": user.name})
+    response = test_client.post(users_url, json={"name": user.name}, **extra_headers)
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert resp_json["detail"]["error"] == f"Username '{user.name}' already exists."
 
 
-def test_put_user_not_found(gen_user, test_db_client, test_client, users_url):
+def test_put_user_not_found(
+    gen_user, test_db_client, test_client, users_url, extra_headers
+):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
 
@@ -152,8 +157,7 @@ def test_put_user_not_found(gen_user, test_db_client, test_client, users_url):
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
     response = test_client.put(
-        users_url,
-        json={"name": u_name_old, "new_name": u_name_new},
+        users_url, json={"name": u_name_old, "new_name": u_name_new}, **extra_headers
     )
     resp_json = response.json()
 
@@ -161,7 +165,9 @@ def test_put_user_not_found(gen_user, test_db_client, test_client, users_url):
     assert resp_json["detail"]["error"] == f"User '{u_name_old}' was not found."
 
 
-def test_put_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_put_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, extra_headers
+):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
 
@@ -169,8 +175,7 @@ def test_put_user_bad_request(gen_user, test_db_client, test_client, users_url):
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
     response = test_client.put(
-        users_url,
-        json={"name": u_name_old, "new_name": u_name_new},
+        users_url, json={"name": u_name_old, "new_name": u_name_new}, **extra_headers
     )
     resp_json = response.json()
 
@@ -178,26 +183,34 @@ def test_put_user_bad_request(gen_user, test_db_client, test_client, users_url):
     assert resp_json["detail"]["error"] == f"Username '{u_name_old}' already exists."
 
 
-def test_delete_user_not_found(gen_user, test_db_client, test_client, users_url):
+def test_delete_user_not_found(
+    gen_user, test_db_client, test_client, users_url, extra_headers
+):
     user = gen_user()
 
     test_db_client.query_single.return_value = None
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
-    response = test_client.delete(users_url, params={"name": user.name})
+    response = test_client.delete(
+        users_url, params={"name": user.name}, **extra_headers
+    )
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert resp_json["detail"]["error"] == f"User '{ user.name}' was not found."
 
 
-def test_delete_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_delete_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, extra_headers
+):
     user = gen_user()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
     t_lifespan.registry.register_value(AsyncIOClient, test_db_client)
 
-    response = test_client.delete(users_url, params={"name": user.name})
+    response = test_client.delete(
+        users_url, params={"name": user.name}, **extra_headers
+    )
     resp_json = response.json()
 
     assert response.status_code == HTTPStatus.BAD_REQUEST

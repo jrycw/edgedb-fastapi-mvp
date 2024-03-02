@@ -10,7 +10,8 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, prefill: bool = False
     # EdgeDB client
     db_client = edgedb.create_async_client()
 
-    async def setup_db_client():
+    async def create_db_client():
+        """only 1 db_client"""
         yield db_client
 
     async def ping_db_callable(_db_client):
@@ -18,7 +19,7 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, prefill: bool = False
 
     registry.register_factory(
         AsyncIOClient,
-        setup_db_client,
+        create_db_client,
         ping=ping_db_callable,
     )
 
