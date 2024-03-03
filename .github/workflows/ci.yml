@@ -44,7 +44,7 @@ jobs:
           run: pytest --cov=app --cov-report=html tests/
       
         - name: Archive HTML coverage report
-          uses: actions/upload-artifact@v3
+          uses: actions/upload-artifact@v4
           with:
             name: coverage-report-${{ matrix.python-version }}
             path: ./htmlcov
