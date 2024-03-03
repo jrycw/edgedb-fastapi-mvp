@@ -9,6 +9,7 @@ on:
     paths-ignore:
         - '**/README.md'
         - 'images/**'
+        - '.github/workflows/**'
 
 jobs:
     build:
@@ -45,5 +46,5 @@ jobs:
         - name: Archive HTML coverage report
           uses: actions/upload-artifact@v3
           with:
-            name: coverage-report
+            name: coverage-report-${{ matrix.python-version }}
             path: ./htmlcov
