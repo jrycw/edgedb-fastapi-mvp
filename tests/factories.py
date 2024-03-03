@@ -27,9 +27,9 @@ class TestUserDataWithnEvents(TestUserData):
 class TestEventData(TestAuditable):
     name: str = Field(default_factory=lambda: faker.text(max_nb_chars=20))
     address: str = Field(default_factory=faker.street_address)
-    schedule: datetime.datetime = Field(
-        default_factory=lambda: faker.date_time().replace(
-            microsecond=random.randint(0, 1000000)
-        )
+    schedule: str = Field(
+        default_factory=lambda: faker.date_time()
+        .replace(microsecond=random.randint(0, 1000000))
+        .isoformat()
     )
     host_name: str = Field(default_factory=faker.name, max_length=50)

@@ -32,7 +32,7 @@ def test_get_event(gen_event, test_db_client, test_client, events_url):
     assert resp_json["name"] == return_event_dict["name"]
     assert resp_json["created_at"] == return_event_dict["created_at"].isoformat()
     assert resp_json["address"] == return_event_dict["address"]
-    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["schedule"] == return_event_dict["schedule"]
     assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
@@ -54,14 +54,14 @@ def test_get_events(gen_event, test_db_client, test_client, events_url):
     assert first_event["name"] == return_event1_dict["name"]
     assert first_event["created_at"] == return_event1_dict["created_at"].isoformat()
     assert first_event["address"] == return_event1_dict["address"]
-    assert first_event["schedule"] == return_event1_dict["schedule"].isoformat()
+    assert first_event["schedule"] == return_event1_dict["schedule"]
     assert first_event["host_name"] == return_event1_dict["host_name"]
 
     assert second_event["id"] == return_event2_dict["id"]
     assert second_event["name"] == return_event2_dict["name"]
     assert second_event["created_at"] == return_event2_dict["created_at"].isoformat()
     assert second_event["address"] == return_event2_dict["address"]
-    assert second_event["schedule"] == return_event2_dict["schedule"].isoformat()
+    assert second_event["schedule"] == return_event2_dict["schedule"]
     assert second_event["host_name"] == return_event2_dict["host_name"]
 
 
@@ -78,10 +78,7 @@ def test_post_event1(gen_event, test_db_client, test_client, events_url):
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "address", "host_name"}),
-            "schedule": event.schedule.isoformat(),
-        },
+        json={**event.model_dump(include={"name", "address", "schedule", "host_name"})},
     )
     resp_json = response.json()
 
@@ -89,7 +86,7 @@ def test_post_event1(gen_event, test_db_client, test_client, events_url):
     assert resp_json["id"] == return_event_dict["id"]
     assert resp_json["name"] == return_event_dict["name"]
     assert resp_json["address"] == return_event_dict["address"]
-    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["schedule"] == return_event_dict["schedule"]
     assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
@@ -107,10 +104,7 @@ def test_post_event2(gen_event, test_db_client, test_client, events_url):
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "host_name"}),
-            "schedule": event.schedule.isoformat(),
-        },
+        json={**event.model_dump(include={"name", "schedule", "host_name"})},
     )
     resp_json = response.json()
 
@@ -118,7 +112,7 @@ def test_post_event2(gen_event, test_db_client, test_client, events_url):
     assert resp_json["id"] == return_event_dict["id"]
     assert resp_json["name"] == return_event_dict["name"]
     assert resp_json["address"] is return_event_dict["address"]
-    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["schedule"] == return_event_dict["schedule"]
     assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
@@ -134,9 +128,7 @@ def test_post_event3(gen_event, test_db_client, test_client, events_url):
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "address", "host_name"}),
-        },
+        json={**event.model_dump(include={"name", "address", "host_name"})},
     )
     resp_json = response.json()
 
@@ -160,9 +152,7 @@ def test_post_event4(gen_event, test_db_client, test_client, events_url):
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "host_name"}),
-        },
+        json={**event.model_dump(include={"name", "host_name"})},
     )
     resp_json = response.json()
 
@@ -191,9 +181,7 @@ def test_put_event(gen_event, test_db_client, test_client, events_url):
         json={
             "name": e_name_old,
             "new_name": e_name_new,
-            "address": event.address,
-            "schedule": event.schedule.isoformat(),
-            "host_name": event.host_name,
+            **event.model_dump(include={"address", "schedule", "host_name"}),
         },
     )
     resp_json = response.json()
@@ -202,7 +190,7 @@ def test_put_event(gen_event, test_db_client, test_client, events_url):
     assert resp_json["id"] == return_event_dict["id"]
     assert resp_json["name"] == e_name_new
     assert resp_json["address"] == return_event_dict["address"]
-    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["schedule"] == return_event_dict["schedule"]
     assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
@@ -227,7 +215,7 @@ def test_delete_event(gen_event, test_db_client, test_client, events_url):
     assert resp_json["id"] == return_event_dict["id"]
     assert resp_json["name"] == return_event_dict["name"]
     assert resp_json["address"] == return_event_dict["address"]
-    assert resp_json["schedule"] == return_event_dict["schedule"].isoformat()
+    assert resp_json["schedule"] == return_event_dict["schedule"]
     assert resp_json["host_name"] == return_event_dict["host_name"]
 
 
@@ -257,10 +245,7 @@ def test_post_event_bad_request1(gen_event, test_db_client, test_client, events_
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "address", "host_name"}),
-            "schedule": event.schedule.isoformat(),
-        },
+        json={**event.model_dump(include={"name", "address", "schedule", "host_name"})},
     )
     resp_json = response.json()
 
@@ -276,10 +261,7 @@ def test_post_event_bad_request2(gen_event, test_db_client, test_client, events_
 
     response = test_client.post(
         events_url,
-        json={
-            **event.model_dump(include={"name", "address", "host_name"}),
-            "schedule": event.schedule.isoformat(),
-        },
+        json={**event.model_dump(include={"name", "address", "schedule", "host_name"})},
     )
     resp_json = response.json()
 
@@ -299,9 +281,7 @@ def test_put_event_bad_request1(gen_event, test_db_client, test_client, events_u
         json={
             "name": e_name_old,
             "new_name": e_name_new,
-            "address": event.address,
-            "schedule": event.schedule.isoformat(),
-            "host_name": event.host_name,
+            **event.model_dump(include={"address", "schedule", "host_name"}),
         },
     )
     resp_json = response.json()
@@ -322,9 +302,7 @@ def test_put_event_bad_request2(gen_event, test_db_client, test_client, events_u
         json={
             "name": e_name_old,
             "new_name": e_name_new,
-            "address": event.address,
-            "schedule": event.schedule.isoformat(),
-            "host_name": event.host_name,
+            **event.model_dump(include={"address", "schedule", "host_name"}),
         },
     )
     resp_json = response.json()
@@ -347,9 +325,7 @@ def test_put_event_internal_server_error(
         json={
             "name": e_name_old,
             "new_name": e_name_new,
-            "address": event.address,
-            "schedule": event.schedule.isoformat(),
-            "host_name": event.host_name,
+            **event.model_dump(include={"address", "schedule", "host_name"}),
         },
     )
     resp_json = response.json()

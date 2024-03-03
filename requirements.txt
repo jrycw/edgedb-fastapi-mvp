@@ -12,3 +12,4 @@ fastui
 python-multipart
 tzdata 
 starlette-csrf
+pytest-cov
