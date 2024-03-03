@@ -40,4 +40,10 @@ jobs:
           run: echo "secret_csrf=$(openssl rand -hex 32)" >> $GITHUB_ENV
 
         - name: Test with pytest
-          run: pytest
+          run: pytest --cov=app --cov-report=html tests/
+      
+        - name: Archive HTML coverage report
+          uses: actions/upload-artifact@v3
+          with:
+            name: coverage-report
+            path: ./htmlcov
