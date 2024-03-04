@@ -1,13 +1,13 @@
 import logging
 import sys
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 import structlog
 from structlog.types import EventDict, Processor  # noqa: F401
 
 
-class CLogLevel(StrEnum):
+class CLogLevel(str, Enum):
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
