@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     backendhost: str = "localhost"
     backendport: int = 8000
     backendreload: bool = False
+    backendprefill: bool = False
 
     tz: str = "UTC"
     secret_csrf: str

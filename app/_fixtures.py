@@ -12,7 +12,7 @@ async def add_users(db_client: AsyncIOClient, target_n_users=5):
     while len(names) < target_n_users:
         names.add(fker.name())
 
-    await db_client.query(
+    return await db_client.query(
         """\
         delete Event;
         delete User;
@@ -31,7 +31,7 @@ async def add_events(db_client: AsyncIOClient, target_n_events=5):
     while len(names) < target_n_events:
         names.add(fker.text(max_nb_chars=20).rstrip("."))
 
-    await db_client.query(
+    return await db_client.query(
         """\
         with dummy_user:= (insert User {name:= "dummy user"}),
         for name in array_unpack(<array<str>>$names)
