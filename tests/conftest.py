@@ -1,8 +1,10 @@
 from unittest.mock import Mock
 
 import pytest
+import structlog
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi.testclient import TestClient
+from structlog.testing import LogCapture
 
 from app.main import make_app
 
@@ -10,32 +12,32 @@ from .factories import TestEventData, TestUserData, TestUserDataWithnEvents
 from .lifespan import t_lifespan
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def users_url():
     yield "users"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def events_url():
     yield "events"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def health_url():
     yield "healthy"
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def gen_user():
     return lambda: TestUserData()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def gen_user_with_n_event():
     return lambda: TestUserDataWithnEvents()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def gen_event():
     return lambda: TestEventData()
 
@@ -54,6 +56,16 @@ def test_client(test_app):
 @pytest.fixture
 def test_db_client():
     yield Mock(spec_set=AsyncIOClient)
+
+
+@pytest.fixture(scope="function")
+def log_output():
+    return LogCapture()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def fixture_configure_structlog(log_output):
+    structlog.configure(processors=[log_output])
 
 
 # @pytest.fixture

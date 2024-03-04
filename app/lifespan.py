@@ -40,7 +40,7 @@ def make_lifespan(*, prefill: bool):
     return svcs.fastapi.lifespan(partial(_lifespan, prefill=prefill))
 
 
-lifespan = make_lifespan(prefill=settings.backendprefill)
+lifespan = make_lifespan(prefill=settings.backend_prefill)
 
 ################################
 # Need to modify _tx_lifespan

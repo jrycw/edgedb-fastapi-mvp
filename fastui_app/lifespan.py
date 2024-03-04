@@ -11,7 +11,7 @@ from .config import settings
 
 async def _lifespan(app: FastAPI, registry: svcs.Registry):
     backend_client = BackendAsyncClient(
-        base_url=f"{settings.backendschema}://{settings.backendhost}:{settings.backendport}"
+        base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
     )
 
     async def creat_backend_client():
@@ -24,7 +24,7 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry):
     )
 
     front_get_client = BackendAsyncClient(
-        base_url=f"{settings.frontendschema}://{settings.frontendhost}:{settings.frontendport}"
+        base_url=f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
     )
 
     async def create_frontend_get_client():
@@ -38,7 +38,7 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry):
 
     async def create_frontend_post_put_delete_client():
         """For every post/put/delete, we request 1 specialized web client"""
-        base_url = f"{settings.frontendschema}://{settings.frontendhost}:{settings.frontendport}"
+        base_url = f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
         async with FrontendPostPutDeleteAsyncClient(base_url=base_url) as client:
             csrftoken = (await client.get("/")).cookies.get("csrftoken")
             # extra_headers = (

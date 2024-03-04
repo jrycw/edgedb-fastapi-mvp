@@ -6,6 +6,7 @@ import svcs
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi import APIRouter, HTTPException, Query
 
+from .logging import CLogLevel, async_ep_log
 from .models import UserCreate, UserUpdate
 from .queries import create_user_async_edgeql as create_user_qry
 from .queries import delete_user_async_edgeql as delete_user_qry
@@ -17,7 +18,6 @@ from .queries import (
 from .queries import update_user_async_edgeql as update_user_qry
 
 router = APIRouter()
-
 
 ################################
 # Search users
@@ -61,9 +61,11 @@ async def get_users(
         if user := await get_user_by_name_qry.get_user_by_name(db_client, name=name):
             return user
 
+    err_msg = f"Username '{name}' does not exist."
+    await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.NOT_FOUND,
-        detail={"error": f"Username '{name}' does not exist."},
+        detail={"error": err_msg},
     )
 
 
@@ -81,14 +83,14 @@ async def get_users(
 async def post_user(services: svcs.fastapi.DepContainer, user: UserCreate):
     db_client = await services.aget(AsyncIOClient)
     try:
-        created_user = await create_user_qry.create_user(db_client, **user.model_dump())
+        return await create_user_qry.create_user(db_client, **user.model_dump())
     except edgedb.errors.ConstraintViolationError:
+        err_msg = f"Username '{user.name}' already exists."
+        await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": f"Username '{user.name}' already exists."},
+            detail={"error": err_msg},
         )
-    else:
-        return created_user
 
 
 ################################
@@ -106,20 +108,25 @@ async def put_user(
     user: UserUpdate,
 ):
     db_client = await services.aget(AsyncIOClient)
+
     try:
         updated_user = await update_user_qry.update_user(db_client, **user.model_dump())
     except edgedb.errors.ConstraintViolationError:
+        err_msg = f"Username '{user.name}' already exists."
+        await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": f"Username '{user.name}' already exists."},
+            detail={"error": err_msg},
         )
     else:
         if updated_user:
             return updated_user
 
+    err_msg = f"User '{user.name}' was not found."
+    await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.NOT_FOUND,
-        detail={"error": f"User '{user.name}' was not found."},
+        detail={"error": err_msg},
     )
 
 
@@ -143,15 +150,19 @@ async def delete_user(
             name=name,
         )
     except edgedb.errors.ConstraintViolationError:
+        err_msg = "User attached to an event. Cannot delete."
+        await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": "User attached to an event. Cannot delete."},
+            detail={"error": err_msg},
         )
     else:
         if deleted_user:
             return deleted_user
 
+    err_msg = f"User '{name}' was not found."
+    await async_ep_log("api.users", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.NOT_FOUND,
-        detail={"error": f"User '{name}' was not found."},
+        detail={"error": err_msg},
     )

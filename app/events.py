@@ -6,6 +6,7 @@ import svcs
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi import APIRouter, HTTPException, Query
 
+from .logging import CLogLevel, async_ep_log
 from .models import EventCreate, EventUpdate
 from .queries import create_event_async_edgeql as create_event_qry
 from .queries import delete_event_async_edgeql as delete_event_qry
@@ -38,9 +39,11 @@ async def get_events(
         if event := await get_event_by_name_qry.get_event_by_name(db_client, name=name):
             return event
 
+    err_msg = f"Event '{name}' does not exist."
+    await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.NOT_FOUND,
-        detail={"error": f"Event '{name}' does not exist."},
+        detail={"error": err_msg},
     )
 
 
@@ -65,18 +68,21 @@ async def post_event(
             db_client, **event.model_dump()
         )
     except edgedb.errors.InvalidArgumentError:
+        err_msg = """\
+                    Invalid datetime format. Datetime string must look like this: \n
+                    '2010-12-27T23:59:59-07:00'\
+                  """
+        await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={
-                "error": "Invalid datetime format. "
-                "Datetime string must look like this: "
-                "'2010-12-27T23:59:59-07:00'",
-            },
+            detail={"error": err_msg},
         )
     except edgedb.errors.ConstraintViolationError:
+        err_msg = f"Event name '{event.name}' already exists."
+        await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": f"Event name '{event.name}' already exists."},
+            detail={"error": err_msg},
         )
     else:
         return created_event
@@ -102,24 +108,31 @@ async def put_event(
             db_client, **event.model_dump()
         )
     except edgedb.errors.InvalidArgumentError:
+        err_msg = """\
+                    Invalid datetime format. Datetime string must look like this: \n
+                    '2010-12-27T23:59:59-07:00'\
+                  """
+        await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={
-                "error": "Invalid datetime format. "
-                "Datetime string must look like this: '2010-12-27T23:59:59-07:00'",
-            },
+            detail={"error": err_msg},
         )
     except edgedb.errors.ConstraintViolationError:
+        err_msg = f"Event name '{event.name}' already exists."
+        await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
-            detail={"error": f"Event name '{event.name}' already exists."},
+            detail={"error": err_msg},
         )
     else:
         if updated_event:
             return updated_event
+
+    err_msg = f"Update event '{event.name}' failed."
+    await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        detail={"error": f"Update event '{event.name}' failed."},
+        detail={"error": err_msg},
     )
 
 
@@ -141,7 +154,9 @@ async def delete_event(
     if deleted_event := await delete_event_qry.delete_event(db_client, name=name):
         return deleted_event
 
+    err_msg = f"Delete event '{name}' failed."
+    await async_ep_log("api.events", err_msg, CLogLevel.WARNING)
     raise HTTPException(
         status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
-        detail={"error": f"Delete event '{name}' failed."},
+        detail={"error": err_msg},
     )

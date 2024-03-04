@@ -224,7 +224,9 @@ def test_delete_event(gen_event, test_db_client, test_client, events_url):
 ################################
 
 
-def test_get_event_not_found(gen_event, test_db_client, test_client, events_url):
+def test_get_event_not_found(
+    gen_event, test_db_client, test_client, events_url, log_output
+):
     event = gen_event()
 
     test_db_client.query_single.return_value = None
@@ -232,12 +234,16 @@ def test_get_event_not_found(gen_event, test_db_client, test_client, events_url)
 
     response = test_client.get(events_url, params={"name": event.name})
     resp_json = response.json()
+    err_msg = f"Event '{event.name}' does not exist."
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert resp_json["detail"]["error"] == f"Event '{event.name}' does not exist."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_post_event_bad_request1(gen_event, test_db_client, test_client, events_url):
+def test_post_event_bad_request1(
+    gen_event, test_db_client, test_client, events_url, log_output
+):
     event = gen_event()
 
     test_db_client.query_single.side_effect = edgedb.errors.InvalidArgumentError
@@ -248,12 +254,17 @@ def test_post_event_bad_request1(gen_event, test_db_client, test_client, events_
         json={**event.model_dump(include={"name", "address", "schedule", "host_name"})},
     )
     resp_json = response.json()
+    first_log_ouput = log_output.entries[0]
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert "Invalid datetime format" in resp_json["detail"]["error"]
+    assert "Invalid datetime format" in first_log_ouput["event"]
+    assert first_log_ouput["log_level"] == "warning"
 
 
-def test_post_event_bad_request2(gen_event, test_db_client, test_client, events_url):
+def test_post_event_bad_request2(
+    gen_event, test_db_client, test_client, events_url, log_output
+):
     event = gen_event()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
@@ -264,12 +275,16 @@ def test_post_event_bad_request2(gen_event, test_db_client, test_client, events_
         json={**event.model_dump(include={"name", "address", "schedule", "host_name"})},
     )
     resp_json = response.json()
+    err_msg = f"Event name '{event.name}' already exists."
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert resp_json["detail"]["error"] == f"Event name '{event.name}' already exists."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_put_event_bad_request1(gen_event, test_db_client, test_client, events_url):
+def test_put_event_bad_request1(
+    gen_event, test_db_client, test_client, events_url, log_output
+):
     event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
 
@@ -285,12 +300,17 @@ def test_put_event_bad_request1(gen_event, test_db_client, test_client, events_u
         },
     )
     resp_json = response.json()
+    first_log_ouput = log_output.entries[0]
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
     assert "Invalid datetime format" in resp_json["detail"]["error"]
+    assert "Invalid datetime format" in first_log_ouput["event"]
+    assert first_log_ouput["log_level"] == "warning"
 
 
-def test_put_event_bad_request2(gen_event, test_db_client, test_client, events_url):
+def test_put_event_bad_request2(
+    gen_event, test_db_client, test_client, events_url, log_output
+):
     event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
 
@@ -306,13 +326,16 @@ def test_put_event_bad_request2(gen_event, test_db_client, test_client, events_u
         },
     )
     resp_json = response.json()
+    err_msg = f"Event name '{e_name_old}' already exists."
+    print(f"{log_output.entries=}")
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert resp_json["detail"]["error"] == f"Event name '{e_name_old}' already exists."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
 def test_put_event_internal_server_error(
-    gen_event, test_db_client, test_client, events_url
+    gen_event, test_db_client, test_client, events_url, log_output
 ):
     event = gen_event()
     e_name_old, e_name_new = event.name, f"{event.name}_new"
@@ -329,13 +352,15 @@ def test_put_event_internal_server_error(
         },
     )
     resp_json = response.json()
+    err_msg = f"Update event '{e_name_old}' failed."
 
     assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-    assert resp_json["detail"]["error"] == f"Update event '{e_name_old}' failed."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
 def test_delete_event_internal_server_error(
-    gen_event, test_db_client, test_client, events_url
+    gen_event, test_db_client, test_client, events_url, log_output
 ):
     event = gen_event()
 
@@ -347,6 +372,8 @@ def test_delete_event_internal_server_error(
         params={"name": event.name},
     )
     resp_json = response.json()
+    err_msg = f"Delete event '{event.name}' failed."
 
     assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
-    assert resp_json["detail"]["error"] == f"Delete event '{event.name}' failed."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}

@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 import edgedb
+import structlog  # noqa: F401
 from edgedb.asyncio_client import AsyncIOClient
 
 from app.queries import create_user_async_edgeql as create_user_qry
@@ -118,7 +119,9 @@ def test_delete_user(gen_user, test_db_client, test_client, users_url):
 ################################
 # Bad cases
 ################################
-def test_get_user_not_found(gen_user, test_db_client, test_client, users_url):
+def test_get_user_not_found(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
 
     test_db_client.query_single.return_value = None
@@ -126,12 +129,16 @@ def test_get_user_not_found(gen_user, test_db_client, test_client, users_url):
 
     response = test_client.get(users_url, params={"name": user.name})
     resp_json = response.json()
+    err_msg = f"Username '{user.name}' does not exist."
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert resp_json["detail"]["error"] == f"Username '{user.name}' does not exist."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_post_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_post_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
@@ -139,12 +146,16 @@ def test_post_user_bad_request(gen_user, test_db_client, test_client, users_url)
 
     response = test_client.post(users_url, json={"name": user.name})
     resp_json = response.json()
+    err_msg = f"Username '{user.name}' already exists."
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert resp_json["detail"]["error"] == f"Username '{user.name}' already exists."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_put_user_not_found(gen_user, test_db_client, test_client, users_url):
+def test_put_user_not_found(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
 
@@ -155,12 +166,16 @@ def test_put_user_not_found(gen_user, test_db_client, test_client, users_url):
         users_url, json={"name": u_name_old, "new_name": u_name_new}
     )
     resp_json = response.json()
+    err_msg = f"User '{u_name_old}' was not found."
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert resp_json["detail"]["error"] == f"User '{u_name_old}' was not found."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_put_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_put_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
     u_name_old, u_name_new = user.name, f"{user.name}_new"
 
@@ -171,12 +186,16 @@ def test_put_user_bad_request(gen_user, test_db_client, test_client, users_url):
         users_url, json={"name": u_name_old, "new_name": u_name_new}
     )
     resp_json = response.json()
+    err_msg = f"Username '{u_name_old}' already exists."
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert resp_json["detail"]["error"] == f"Username '{u_name_old}' already exists."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_delete_user_not_found(gen_user, test_db_client, test_client, users_url):
+def test_delete_user_not_found(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
 
     test_db_client.query_single.return_value = None
@@ -184,12 +203,16 @@ def test_delete_user_not_found(gen_user, test_db_client, test_client, users_url)
 
     response = test_client.delete(users_url, params={"name": user.name})
     resp_json = response.json()
+    err_msg = f"User '{user.name}' was not found."
 
     assert response.status_code == HTTPStatus.NOT_FOUND
-    assert resp_json["detail"]["error"] == f"User '{ user.name}' was not found."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
 
 
-def test_delete_user_bad_request(gen_user, test_db_client, test_client, users_url):
+def test_delete_user_bad_request(
+    gen_user, test_db_client, test_client, users_url, log_output
+):
     user = gen_user()
 
     test_db_client.query_single.side_effect = edgedb.errors.ConstraintViolationError
@@ -197,6 +220,8 @@ def test_delete_user_bad_request(gen_user, test_db_client, test_client, users_ur
 
     response = test_client.delete(users_url, params={"name": user.name})
     resp_json = response.json()
+    err_msg = "User attached to an event. Cannot delete."
 
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert resp_json["detail"]["error"] == "User attached to an event. Cannot delete."
+    assert resp_json["detail"]["error"] == err_msg
+    assert log_output.entries[0] == {"event": err_msg, "log_level": "warning"}
