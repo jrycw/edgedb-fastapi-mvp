@@ -10,6 +10,7 @@ This repository is the culmination of my journey exploring [EdgeDB](https://gith
 * Expanded the test suite to achieve comprehensive test coverage.
 * Experimented with the new package installer and resolver, [uv](https://github.com/astral-sh/uv).
 * Explored the use of [FastUI](https://github.com/pydantic/FastUI) for frontend components.
+* Utilized [structlog](https://github.com/hynek/structlog) for logging purposes.
 
 ### Video
 [<img src="https://raw.githubusercontent.com/jrycw/edgedb-fastapi-mvp/master/images/users/userlist.jpg">](https://edgedb-fastapi-mvp.us-lax-1.linodeobjects.com/videos/edgedb-fastapi-mvp-demo.mp4 "edgedb-fastapi-mvp-demo")
