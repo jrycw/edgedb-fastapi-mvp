@@ -4,9 +4,10 @@ import edgedb
 import svcs
 from edgedb.asyncio_client import AsyncIOClient
 from fastapi import FastAPI
+from httpx import AsyncClient  # noqa: F401
 
-from ._fixtures import add_events, add_users
 from .config import settings
+from .queries import ping_db_async_edgeql as ping_db_qry
 
 
 async def _lifespan(app: FastAPI, registry: svcs.Registry, *, prefill: bool):
@@ -14,11 +15,10 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, *, prefill: bool):
     db_client = edgedb.create_async_client()
 
     async def create_db_client():
-        """only 1 db_client"""
         yield db_client
 
     async def ping_db_callable(_db_client):
-        return await _db_client.query("select 1;")
+        return ping_db_qry
 
     registry.register_factory(
         AsyncIOClient,
@@ -26,10 +26,21 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, *, prefill: bool):
         ping=ping_db_callable,
     )
 
-    # Add users and events for dev
-    if prefill:
-        await add_users(db_client)
-        await add_events(db_client)
+    # Web client
+    # if prefill:
+    #     http_client = AsyncClient(
+    #         base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
+    #     )
+
+    #     async def create_http_client():
+    #         yield http_client
+
+    #     async def ping_http_callable(_http_client):
+    #         return lambda _http_client: _http_client.get("/")
+
+    #     registry.register_factory(
+    #         AsyncClient, create_http_client, ping=ping_http_callable
+    #     )
 
     yield
 

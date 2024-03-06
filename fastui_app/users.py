@@ -34,6 +34,17 @@ async def user_ilike_searchview(
 
 
 @router.post(
+    "/api/reset",
+    response_model=FastUI,
+    response_model_exclude_none=True,
+)
+async def reset(services: svcs.fastapi.DepContainer):
+    client = await services.aget(BackendAsyncClient)
+    resp = await client.post("/fixtures")
+    return [c.FireEvent(event=GoToEvent(url="/events/"))]
+
+
+@router.post(
     "/api/users/new/",
     response_model=FastUI,
     response_model_exclude_none=True,
@@ -227,6 +238,31 @@ async def user_listview(
                         ),
                     ],
                     open_trigger=PageEvent(name="add-user"),
+                ),
+                c.Button(
+                    text="Reset",
+                    on_click=PageEvent(name="reset-dev-data"),
+                    class_name="+ ms-2",
+                ),
+                c.Modal(
+                    title="Delete User",
+                    body=[
+                        c.Paragraph(text="Confirm to reset the dev data"),
+                        c.Form(
+                            form_fields=[],
+                            submit_url="/api/reset",
+                            loading=[c.Spinner(text="Resetting...")],
+                            footer=[],
+                            submit_trigger=PageEvent(name="form-reset-dev-data-submit"),
+                        ),
+                    ],
+                    footer=[
+                        c.Button(
+                            text="Submit",
+                            on_click=PageEvent(name="form-reset-dev-data-submit"),
+                        ),
+                    ],
+                    open_trigger=PageEvent(name="reset-dev-data"),
                 ),
             ],
             class_name="mb-3",

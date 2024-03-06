@@ -3,8 +3,8 @@ from fastapi import FastAPI
 
 from .clients import (
     BackendAsyncClient,
-    FrontendGetAsyncClient,
-    FrontendPostPutDeleteAsyncClient,
+    FrontendGetAsyncClient,  # noqa: F401
+    FrontendPostPutDeleteAsyncClient,  # noqa: F401
 )
 from .config import settings
 
@@ -18,39 +18,36 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry):
         """1 backend web client"""
         yield backend_client
 
-    registry.register_factory(
-        BackendAsyncClient,
-        creat_backend_client,
-    )
+    registry.register_factory(BackendAsyncClient, creat_backend_client)
 
-    front_get_client = BackendAsyncClient(
-        base_url=f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
-    )
+    # frontend_get_client = FrontendGetAsyncClient(
+    #     base_url=f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
+    # )
 
-    async def create_frontend_get_client():
-        """1 frontent web GET client"""
-        yield front_get_client
+    # async def create_frontend_get_client():
+    #     """1 frontent web GET client"""
+    #     yield frontend_get_client
 
-    registry.register_factory(
-        FrontendGetAsyncClient,
-        create_frontend_get_client,
-    )
+    # registry.register_factory(
+    #     FrontendGetAsyncClient,
+    #     create_frontend_get_client,
+    # )
 
-    async def create_frontend_post_put_delete_client():
-        """For every post/put/delete, we request 1 specialized web client"""
-        base_url = f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
-        async with FrontendPostPutDeleteAsyncClient(base_url=base_url) as client:
-            csrftoken = (await client.get("/")).cookies.get("csrftoken")
-            # extra_headers = (
-            #     {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
-            # )
-            csrftoken_dict = {"x-csrftoken": csrftoken} if csrftoken is not None else {}
-            yield client, csrftoken_dict
+    # async def create_frontend_post_put_delete_client():
+    #     """For every post/put/delete, we request 1 specialized web client"""
+    #     base_url = f"{settings.frontend_schema}://{settings.frontend_host}:{settings.frontend_port}"
+    #     async with FrontendPostPutDeleteAsyncClient(base_url=base_url) as client:
+    #         csrftoken = (await client.get("/")).cookies.get("csrftoken")
+    #         # extra_headers = (
+    #         #     {"headers": {"x-csrftoken": csrftoken}} if csrftoken is not None else {}
+    #         # )
+    #         csrftoken_dict = {"x-csrftoken": csrftoken} if csrftoken is not None else {}
+    #         yield client, csrftoken_dict
 
-    registry.register_factory(
-        FrontendPostPutDeleteAsyncClient,
-        create_frontend_post_put_delete_client,
-    )
+    # registry.register_factory(
+    #     FrontendPostPutDeleteAsyncClient,
+    #     create_frontend_post_put_delete_client,
+    # )
 
     yield
 

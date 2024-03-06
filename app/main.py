@@ -1,11 +1,12 @@
 # import sys  # noqa: F401
 # sys.path.append(os.getcwd())
 # import uvicorn  # noqa: F401
+import httpx  # noqa: F401
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app import common, events, health, users
+from app import common, events, fixtures, health, users  # noqa: F401
 from app.config import settings
 from app.lifespan import lifespan
 from app.logging import setup_logging
@@ -36,6 +37,12 @@ def make_app(lifespan):
     app.include_router(events.router)
     app.include_router(health.router)
     app.include_router(common.router)
+    app.include_router(fixtures.router)
+
+    # base_url = f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
+    # with httpx.Client(base_url=base_url) as client:
+    #     r = client.post("/fixtures", json={})
+    #     print(f"{r=}")
 
     return app
 

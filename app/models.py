@@ -90,3 +90,10 @@ class EventFull(Auditable, EventCreate, EventID):
 ################################
 class HealthOut(BaseModel):
     ok: list[str] = Field(default_factory=list)
+
+
+################################
+# Dev data
+################################
+class DevDataCreate(BaseModel):
+    n: int = 5
