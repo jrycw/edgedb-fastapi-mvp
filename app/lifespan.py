@@ -1,3 +1,4 @@
+import json
 from functools import partial
 
 import edgedb
@@ -7,7 +8,9 @@ from fastapi import FastAPI
 from httpx import AsyncClient  # noqa: F401
 
 from .config import settings
+from .factories import gen_default_dev_data
 from .queries import ping_db_async_edgeql as ping_db_qry
+from .queries import set_default_dev_data_async_edgeql as set_default_dev_data_qry
 
 
 async def _lifespan(app: FastAPI, registry: svcs.Registry, *, prefill: bool):
@@ -26,24 +29,27 @@ async def _lifespan(app: FastAPI, registry: svcs.Registry, *, prefill: bool):
         ping=ping_db_callable,
     )
 
-    # Web client
-    # if prefill:
-    #     http_client = AsyncClient(
-    #         base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
-    #     )
+    if prefill:
+        # Web client
+        #     http_client = AsyncClient(
+        #         base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
+        #     )
 
-    #     async def create_http_client():
-    #         yield http_client
+        #     async def create_http_client():
+        #         yield http_client
 
-    #     async def ping_http_callable(_http_client):
-    #         return lambda _http_client: _http_client.get("/")
+        #     async def ping_http_callable(_http_client):
+        #         return lambda _http_client: _http_client.get("/")
 
-    #     registry.register_factory(
-    #         AsyncClient, create_http_client, ping=ping_http_callable
-    #     )
+        #     registry.register_factory(
+        #         AsyncClient, create_http_client, ping=ping_http_callable
+        #     )
+
+        await set_default_dev_data_qry.set_default_dev_data(
+            db_client, data=json.dumps(gen_default_dev_data(n=5))
+        )
 
     yield
-
     await registry.aclose()
 
 

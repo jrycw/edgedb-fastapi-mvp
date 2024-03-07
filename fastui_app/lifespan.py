@@ -11,7 +11,8 @@ from .config import settings
 
 async def _lifespan(app: FastAPI, registry: svcs.Registry):
     backend_client = BackendAsyncClient(
-        base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}"
+        base_url=f"{settings.backend_schema}://{settings.backend_host}:{settings.backend_port}",
+        timeout=60,
     )
 
     async def creat_backend_client():

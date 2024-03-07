@@ -34,7 +34,9 @@ def gen_event():
         may be beneficial for testing purposes.
         """
 
-        name: str = Field(default_factory=lambda: faker.text(max_nb_chars=20))
+        name: str = Field(
+            default_factory=lambda: faker.text(max_nb_chars=30), max_length=50
+        )
         address: str | None = Field(
             default_factory=random.choice([faker.street_address, lambda: None])
         )

@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
 import edgedb
-import structlog  # noqa: F401
+import pytest
 from edgedb.asyncio_client import AsyncIOClient
 
 from app.queries import create_user_async_edgeql as create_user_qry
@@ -10,8 +10,22 @@ from app.queries import get_user_by_name_async_edgeql as get_user_by_name_qry
 from app.queries import get_users_async_edgeql as get_users_qry
 from app.queries import update_user_async_edgeql as update_users_qry
 
+from .factories import TestUserData, TestUserDataWithnEvents
 from .lifespan import t_lifespan
 from .utils import assert_datetime_equal
+
+
+################################
+# Fixtures
+################################
+@pytest.fixture(scope="function")
+def gen_user():
+    return lambda: TestUserData()
+
+
+@pytest.fixture(scope="function")
+def gen_user_with_n_event():
+    return lambda: TestUserDataWithnEvents()
 
 
 ################################

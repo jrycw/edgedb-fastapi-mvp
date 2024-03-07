@@ -14,7 +14,7 @@ from .clients import (  # noqa: F401
     FrontendGetAsyncClient,
     FrontendPostPutDeleteAsyncClient,
 )
-from .forms import UserCreationForm, UserUpdateForm
+from .forms import DefaultDevDataForm, UserCreationForm, UserUpdateForm
 from .shared import demo_page
 from .utils import _form_user_repr, _raise_for_status
 
@@ -38,9 +38,12 @@ async def user_ilike_searchview(
     response_model=FastUI,
     response_model_exclude_none=True,
 )
-async def reset(services: svcs.fastapi.DepContainer):
+async def reset(
+    services: svcs.fastapi.DepContainer,
+    form: Annotated[DefaultDevDataForm, fastui_form(DefaultDevDataForm)],
+):
     client = await services.aget(BackendAsyncClient)
-    resp = await client.post("/fixtures")
+    resp = await client.post("/reset", json=form.model_dump())
     return [c.FireEvent(event=GoToEvent(url="/events/"))]
 
 
@@ -241,28 +244,32 @@ async def user_listview(
                 ),
                 c.Button(
                     text="Reset",
-                    on_click=PageEvent(name="reset-dev-data"),
+                    on_click=PageEvent(name="reset-default-dev-data"),
                     class_name="+ ms-2",
                 ),
                 c.Modal(
-                    title="Delete User",
+                    title="Reset",
                     body=[
-                        c.Paragraph(text="Confirm to reset the dev data"),
-                        c.Form(
-                            form_fields=[],
+                        c.Paragraph(text="Confirm to reset as default dev data"),
+                        c.ModelForm(
+                            model=DefaultDevDataForm,
                             submit_url="/api/reset",
                             loading=[c.Spinner(text="Resetting...")],
                             footer=[],
-                            submit_trigger=PageEvent(name="form-reset-dev-data-submit"),
+                            submit_trigger=PageEvent(
+                                name="modal-form-reset-default-dev-data-submit"
+                            ),
                         ),
                     ],
                     footer=[
                         c.Button(
                             text="Submit",
-                            on_click=PageEvent(name="form-reset-dev-data-submit"),
+                            on_click=PageEvent(
+                                name="modal-form-reset-default-dev-data-submit"
+                            ),
                         ),
                     ],
-                    open_trigger=PageEvent(name="reset-dev-data"),
+                    open_trigger=PageEvent(name="reset-default-dev-data"),
                 ),
             ],
             class_name="mb-3",

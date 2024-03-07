@@ -45,6 +45,7 @@ class _DisplaySchedule:
             v = (
                 datetime.datetime.fromisoformat(v)
                 .astimezone(user_prefer_zoneinfo)
+                .replace(microsecond=0)
                 .isoformat()
             )
         return v
@@ -211,3 +212,18 @@ class EventUpdateForm(
     EventNewNameUpdateForm,
 ):
     pass
+
+
+################################
+# Default Dev Data
+################################
+
+
+class DefaultDevDataForm(BaseModel):
+    n: int = Field(
+        title="Number of events",
+        description="0 <= n_events <=100",
+        default=5,
+        ge=0,
+        le=100,
+    )

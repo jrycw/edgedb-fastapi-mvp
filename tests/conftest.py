@@ -8,38 +8,27 @@ from structlog.testing import LogCapture
 
 from app.main import make_app
 
-from .factories import TestUserData, TestUserDataWithnEvents
 from .lifespan import t_lifespan
 
 
 @pytest.fixture(scope="session", autouse=True)
 def users_url():
-    yield "users"
+    yield "/users"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def events_url():
-    yield "events"
+    yield "/events"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def health_url():
-    yield "healthy"
+    yield "/healthy"
 
 
 @pytest.fixture(scope="session", autouse=True)
-def fixtures_url():
-    yield "fixtures"
-
-
-@pytest.fixture(scope="function")
-def gen_user():
-    return lambda: TestUserData()
-
-
-@pytest.fixture(scope="function")
-def gen_user_with_n_event():
-    return lambda: TestUserDataWithnEvents()
+def reset_default_dev():
+    yield "/reset"
 
 
 @pytest.fixture(scope="session", autouse=True)

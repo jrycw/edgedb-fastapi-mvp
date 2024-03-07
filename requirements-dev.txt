@@ -10,12 +10,12 @@ pytest-faker
 pytest-repeat
 pydantic-settings
 fastui
-python-multipart
 tzdata 
-starlette-csrf
 pytest-cov
 structlog
 asgi-correlation-id
 rich
 colorama
 stamina
+# python-multipart
+# starlette-csrf

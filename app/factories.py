@@ -17,7 +17,9 @@ def gen_event():
         may be beneficial for testing purposes.
         """
 
-        name: str = Field(default_factory=lambda: faker.text(max_nb_chars=20))
+        name: str = Field(
+            default_factory=lambda: faker.text(max_nb_chars=30), max_length=50
+        )
         address: str | None = Field(
             default_factory=random.choice([faker.street_address, lambda: None])
         )
@@ -34,3 +36,10 @@ def gen_event():
         host_name: str = Field(default_factory=faker.name, max_length=50)
 
     return FakeEventData()
+
+
+def gen_default_dev_data(n):
+    return [
+        gen_event().model_dump(include={"name", "address", "schedule", "host_name"})
+        for _ in range(n)
+    ]
