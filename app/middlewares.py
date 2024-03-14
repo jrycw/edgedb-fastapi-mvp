@@ -21,7 +21,7 @@ async def add_logging_middleware(request: Request, call_next) -> Response:
         raise
     finally:
         process_time = time.perf_counter_ns() - start_time
-        status_code = response.status_code
+        status_code = int(response.status_code)  # For <enum 'HTTPStatus'>
         url = get_path_with_query_string(request.scope)
 
         # request.client is None for tests, so we need to fill in something here
