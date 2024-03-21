@@ -12,9 +12,8 @@ def gen_event():
 
     class FakeEventData(BaseModel):
         """
-        The "address" and "schedule" fields are optional,
-        meaning they can be set to `None`, and adding randomness
-        may be beneficial for testing purposes.
+        The fields `address` and `schedule` are optional, allowing them to be set as `None`.
+        Introducing randomness could be advantageous for testing.
         """
 
         name: str = Field(
